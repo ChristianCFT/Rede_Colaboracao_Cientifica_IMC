@@ -1,0 +1,168 @@
+/* Painel de detalhes (à direita): resumo do recorte, pesquisador e aresta. */
+
+/* Vetor das 5 dimensões em grade */
+.vec {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin: 6px 0;
+}
+
+.vec div {
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  text-align: center;
+  padding: 4px 2px;
+}
+
+.vec b {
+  display: block;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.vec span {
+  font-size: 10px;
+  color: var(--mu);
+}
+
+/* Atividades de uma aresta; .out = fora do recorte atual */
+.act {
+  margin: 3px 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--bd);
+}
+
+.act.out {
+  opacity: .45;
+}
+
+.act .yr {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Etiqueta de instituto / área */
+.badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 11px;
+}
+
+/* Nome de pesquisador clicável no título de uma aresta */
+.nl {
+  color: inherit;
+}
+
+/* Barras horizontais: rótulo · barra · valor */
+.bars {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  align-items: center;
+  gap: 5px 8px;
+  margin: 6px 0;
+}
+
+.bars .bl {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bars .bl.muted {
+  opacity: .45;
+}
+
+.bars .bt {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--pn2);
+  overflow: hidden;
+}
+
+.bars .bf {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.bars .bv {
+  font-variant-numeric: tabular-nums;
+  color: var(--mu);
+  text-align: right;
+  min-width: 62px;
+}
+
+.bars .bv b {
+  color: var(--tx);
+  font-weight: 600;
+}
+
+/* Listas de pesquisadores (Top 5, mais conectados) */
+.li .rk {
+  display: inline-block;
+  width: 16px;
+  color: var(--mu);
+  font-variant-numeric: tabular-nums;
+}
+
+.li .pr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.li .pr .nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.li .pr .go {
+  color: var(--mu);
+  font-variant-numeric: tabular-nums;
+  padding: 0 2px;
+  border-radius: 4px;
+}
+
+.li .pr .go:hover {
+  color: var(--tx);
+  background: var(--hov);
+}
+
+.meta {
+  margin: 4px 0 0;
+}
+
+/* Título de grupo (dimensão) com contador */
+.grp-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grp-h .cnt {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+details.all > summary {
+  cursor: pointer;
+  color: var(--mu);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+  margin: 16px 0 6px;
+}
+
+.empty {
+  margin-top: 14px;
+}

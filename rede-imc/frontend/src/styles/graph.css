@@ -1,0 +1,75 @@
+/* Área central: canvas do grafo e superfícies flutuantes sobre ele (controles da câmera e tooltip). */
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+}
+
+/* Vidro fosco usado pelo HUD, pelos controles da câmera e pelo tooltip */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-bd);
+  border-radius: 8px;
+}
+
+/* Controles da câmera (canto inferior direito) */
+.cam {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cam .grp {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cam button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--tx);
+}
+
+.cam .grp button + button {
+  border-top: 1px solid var(--glass-bd);
+}
+
+.cam button:hover {
+  background: var(--hov);
+}
+
+.cam svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Tooltip do nó sob o mouse */
+#tip {
+  position: absolute;
+  pointer-events: none;
+  padding: 5px 8px;
+  display: none;
+  max-width: 280px;
+  font-size: 12px;
+  border-radius: 6px;
+}

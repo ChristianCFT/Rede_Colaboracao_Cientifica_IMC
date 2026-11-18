@@ -1,0 +1,157 @@
+/* Controles: campo de busca, checkboxes/radios, botões e sliders. */
+
+input[type=text] {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  background: var(--pn2);
+  color: var(--tx);
+}
+
+/* Linha com checkbox ou radio; .zero = item sem nada no recorte atual */
+label.r {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 3px 0;
+  cursor: pointer;
+}
+
+label.r.zero {
+  opacity: .45;
+}
+
+button {
+  padding: 6px 10px;
+  border: 1px solid var(--bd);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--tx);
+  cursor: pointer;
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--ac);
+  outline-offset: 1px;
+}
+
+/* Botão com aparência de link (ex.: "Limpar" filtros) */
+.lnk {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--lk);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lnk:hover {
+  text-decoration: underline;
+}
+
+/* Sliders: mesma aparência para o simples e o duplo (reproduz o controle nativo azul).
+   A trilha (.trk) e o preenchimento (.fill) são elementos próprios; o input fica transparente por cima. */
+.sl {
+  position: relative;
+  height: 16px;
+  margin: 6px 0 2px;
+}
+
+.sl .trk {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4px;
+  height: 8px;
+  border-radius: 4px;
+  background: #efefef;
+  border: 1px solid #b2b2b2;
+}
+
+.sl .fill {
+  position: absolute;
+  top: 4px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ac);
+}
+
+.sl input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.sl.dual input {
+  pointer-events: none;
+}
+
+.sl input::-webkit-slider-runnable-track {
+  height: 16px;
+  background: transparent;
+  border: 0;
+}
+
+.sl input::-moz-range-track {
+  height: 16px;
+  background: transparent;
+  border: 0;
+}
+
+.sl input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ac);
+  cursor: pointer;
+}
+
+.sl input::-moz-range-thumb {
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ac);
+  cursor: pointer;
+}
+
+.sl input:hover::-webkit-slider-thumb {
+  background: var(--ac-h);
+}
+
+.sl input:hover::-moz-range-thumb {
+  background: var(--ac-h);
+}
+
+.sl input:focus-visible {
+  outline: none;
+}
+
+.sl input:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 2px var(--pn), 0 0 0 4px var(--ac);
+}
+
+.sl input:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 2px var(--pn), 0 0 0 4px var(--ac);
+}
+
+/* Anos mínimo e máximo abaixo do slider duplo */
+.ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-top: 2px;
+}

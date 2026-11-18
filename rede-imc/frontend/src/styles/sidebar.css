@@ -1,0 +1,74 @@
+/* Barra lateral esquerda: linhas de texto, ajuda e seções retráteis (acordeões). */
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+/* Rótulo acima do slider "Mín. de atividades em comum" */
+.slider-label {
+  margin-top: 8px;
+}
+
+.help {
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+
+/* Acordeões: o chevron fica na margem esquerda, alinhando o texto com o restante da barra. */
+.acc-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0 6px;
+}
+
+.acc-t {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--mu);
+  cursor: pointer;
+}
+
+.acc-t::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-70%) rotate(45deg);
+  transition: transform .15s;
+}
+
+.acc[data-open="0"] .acc-t::before {
+  transform: translateY(-50%) rotate(-45deg);
+}
+
+.acc-t:hover {
+  color: var(--tx);
+}
+
+.acc[data-open="0"] .acc-b {
+  display: none;
+}
+
+/* Checkbox "marcar/desmarcar todos" no cabeçalho da seção */
+.master {
+  margin: 0 0 0 auto;
+  cursor: pointer;
+}

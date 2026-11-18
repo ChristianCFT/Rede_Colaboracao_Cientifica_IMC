@@ -1,0 +1,47 @@
+/* Estrutura da aplicação: barra lateral esquerda | área do grafo | painel de detalhes. */
+
+body {
+  display: flex;
+}
+
+aside {
+  width: 310px;
+  flex: none;
+  background: var(--pn);
+  border-right: 1px solid var(--bd);
+  overflow: auto;
+  padding: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bd) transparent;
+}
+
+#side {
+  width: 340px;
+  border-right: 0;
+  border-left: 1px solid var(--bd);
+}
+
+main {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  background: var(--cv);
+}
+
+/* Tela de carregamento / erro exibida antes do grafo */
+.boot {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--tx);
+  font: 13px system-ui, sans-serif;
+  text-align: center;
+}
+
+.boot-box {
+  max-width: 380px;
+  padding: 20px;
+}
