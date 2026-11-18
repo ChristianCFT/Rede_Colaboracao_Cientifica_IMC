@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+
+# Currículos (dados pessoais) e a extração temporária do ZIP não vão para o repositório
+dados/
+dados_gerados
