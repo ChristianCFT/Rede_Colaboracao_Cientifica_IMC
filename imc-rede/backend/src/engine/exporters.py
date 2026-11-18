@@ -2,12 +2,22 @@
 import json, math
 import networkx as nx
 from pathlib import Path
-from app.core.config import DIMS, PALETA, COR_GRUPO
+from src.config import DIMS, PALETA, COR_GRUPO
 
 def _rgb(h):
+    """Converte uma cor hexadecimal em componentes RGB.
+
+    Entrada: cor hexadecimal iniciada por #.
+    Saída: dict com chaves r, g e b.
+    """
     return {c: int(h[i:i + 2], 16) for c, i in zip('rgb', (1, 3, 5))}
 
 def construir(nos, arestas, pos, grau, viz):
+    """Monta o grafo NetworkX com atributos próprios dos formatos de exportação.
+
+    Entrada: nós, arestas, posições, graus e indicador de atributos visuais.
+    Saída: instância nx.Graph pronta para exportação.
+    """
     g = nx.Graph()
     for k, v in nos.items():
         at = dict(label=v['label'], instituto=v['instituto'], area_de_trabalho=v['area'], observacao=v['obs'],
@@ -28,7 +38,11 @@ def construir(nos, arestas, pos, grau, viz):
     return g
 
 def exportar(fmt: str, nos: dict, arestas: dict, pos: dict, grau: dict, destino: Path) -> Path:
-    """Escreve o grafo em 'gexf' (Gephi, com viz) ou 'graphml' (Cytoscape/yEd)."""
+    """Escreve o grafo em GEXF ou GraphML.
+
+    Entrada: formato, nós, arestas, posições, graus e arquivo destino.
+    Saída: caminho do arquivo criado.
+    """
     if fmt == 'gexf':
         nx.write_gexf(construir(nos, arestas, pos, grau, True), destino)
     elif fmt == 'graphml':

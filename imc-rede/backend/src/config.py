@@ -2,7 +2,6 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ROOT = ROOT.parent  # backend/
 RAW, CACHE = ROOT / 'data' / 'raw', ROOT / '.cache'
 FILES = dict(saida='dataset_saida_IMC.csv', entrada='dataset_entrada_IMC.csv',
              unifei='dataset_completo_UNIFEI.csv', atividades='dataset_atividades_IMC.csv')

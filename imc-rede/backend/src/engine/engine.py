@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 import networkx as nx
-from app.core.config import CACHE, DIMS, DIMN, PALETA, COR_GRUPO
-from app.schemas.graph import (Area, Atividade, AtividadeDetalhe, Edge, Graph, GraphFilter, NetworkMetrics, Node,
+from src.config import CACHE, DIMS, DIMN, PALETA, COR_GRUPO
+from src.schemas.graph_schema import (Area, Atividade, AtividadeDetalhe, Edge, Graph, GraphFilter, NetworkMetrics, Node,
                                NodeDetail, Producao, Vizinho)
-from . import exporters, layout, loaders
+from src.engine import exporters, layout, loaders
 
 class NodeNotFound(Exception):
     pass
@@ -25,6 +25,11 @@ class Engine:
     metricas: NetworkMetrics
 
     def node(self, k: str) -> Node:
+        """Converte dados internos de um nó no schema Pydantic.
+
+        Entrada: ID do pesquisador.
+        Saída: objeto Node.
+        """
         v, p, q = self.nos[k], self.pos_livre[k], self.pos_area[k]
         return Node(id=k, label=v['label'], instituto=v['instituto'], area=v['area'], grupo=v['grupo'], comp=v['comp'],
                     mat=v['mat'], grau=self.grau.get(k, 0), centralidade_grau=round(self.cen[k], 5),
@@ -33,10 +38,20 @@ class Engine:
                     x=round(p[0], 1), y=round(p[1], 1), x_area=round(q[0], 1), y_area=round(q[1], 1))
 
     def edge(self, k: tuple, e: dict) -> Edge:
+        """Converte dados internos de uma aresta no schema Pydantic.
+
+        Entrada: tupla de IDs e atributos da aresta.
+        Saída: objeto Edge.
+        """
         return Edge(source=k[0], target=k[1], tipo_relacao=e['tipo'], escopo=e['escopo'], area_imc=e['area_imc'],
                     vetor_contagem=e['vc'], vetor_bruto=e['vb'], soma_bruta=sum(e['vc']))
 
     def _imc_ok(self, k: str, grupos: set[str] | None) -> bool:
+        """Verifica se um nó atende ao filtro de grupos.
+
+        Entrada: ID do nó e conjunto opcional de grupos.
+        Saída: booleano indicando permanência no filtro.
+        """
         v = self.nos[k]
         if v['instituto'] != 'IMC' or grupos is None:
             return True
@@ -44,6 +59,11 @@ class Engine:
                (not v['comp'] and not v['mat'] and 'Outras' in grupos)
 
     def graph(self, f: GraphFilter | None = None) -> Graph:
+        """Aplica filtros e monta o objeto completo do grafo.
+
+        Entrada: filtros opcionais GraphFilter.
+        Saída: objeto Graph com nós, arestas, áreas e métricas.
+        """
         f = f or GraphFilter()
         gr = set(f.grupos) if f.grupos is not None else None
         ed = {k: e for k, e in self.arestas.items()
@@ -63,6 +83,11 @@ class Engine:
                      areas=areas, paleta=PALETA, cores_grupo=COR_GRUPO, dimensoes=DIMN, metricas=self.metricas)
 
     def detail(self, k: str) -> NodeDetail:
+        """Busca um nó e monta seus vizinhos e atividades.
+
+        Entrada: ID do pesquisador.
+        Saída: objeto NodeDetail ou exceção NodeNotFound.
+        """
         if k not in self.nos:
             raise NodeNotFound(k)
         viz = []
@@ -78,6 +103,11 @@ class Engine:
         return NodeDetail(**self.node(k).model_dump(), vizinhos=viz)
 
     def export(self, fmt: str) -> Path:
+        """Gera ou reutiliza o arquivo de exportação solicitado.
+
+        Entrada: formato gexf ou graphml.
+        Saída: caminho do arquivo exportado.
+        """
         CACHE.mkdir(exist_ok=True)
         dest = CACHE / f'grafo_IMC.{fmt}'
         if not dest.exists():
@@ -86,7 +116,11 @@ class Engine:
 
 @lru_cache(maxsize=1)
 def get_engine() -> Engine:
-    """Processamento pesado (CSV, layouts spring, centralidades) executa uma só vez por processo."""
+    """Executa o pipeline pesado uma vez por processo.
+
+    Entrada: nenhum argumento.
+    Saída: Engine cacheado com grafo, layouts e métricas.
+    """
     d = loaders.carregar()
     nos = loaders.vertices(d['entrada'], d['unifei'])
     arestas = loaders.arestas(d['saida'], nos)

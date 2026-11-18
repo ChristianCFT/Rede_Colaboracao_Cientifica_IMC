@@ -1,4 +1,4 @@
-from app.services.graph_engine.areas import classificar
+from src.engine.areas import classificar
 
 def test_computacao():
     r = classificar('Ciências Exatas e da Terra / Ciência da Computação')

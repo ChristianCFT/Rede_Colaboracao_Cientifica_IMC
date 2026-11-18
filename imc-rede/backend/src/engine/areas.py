@@ -1,8 +1,13 @@
 """Divide o IMC em Computação e Matemática a partir do campo 'area de trabalho'."""
 import unicodedata
-from app.core.config import REGRAS_AREA
+from src.config import REGRAS_AREA
 
 def _norm(s):
+    """Normaliza texto removendo acentos e convertendo para minúsculas.
+
+    Entrada: texto com ou sem acentos.
+    Saída: texto ASCII em minúsculas.
+    """
     return unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().lower()
 
 def classificar(area):
