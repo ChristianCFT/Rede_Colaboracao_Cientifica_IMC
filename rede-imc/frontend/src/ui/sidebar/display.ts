@@ -8,18 +8,9 @@ import { wrapSlider } from './sliders';
 
 const each = <T extends HTMLElement>(sel: string, fn: (el: T) => void): void => document.querySelectorAll<T>(sel).forEach(fn);
 
-function help(): void {
-  const espessura = display.peso
-    ? 'Espessura da aresta = peso da colaboração (0 a 1, normalizado pelo maior valor da rede). '
-    : 'Espessura da aresta = atividades em comum no recorte (sem normalização). ';
-  $('help').textContent = `Cor do nó = ${display.colorMode === 'area' ? 'área do IMC' : 'instituto'}. ` + espessura +
-    'Arraste o fundo para mover, arraste um nó para reposicioná-lo, ' +
-    'role para dar zoom e clique em um nó ou aresta para ver detalhes. Atalhos: Esc limpa a seleção, + / − zoom, F enquadra, P liga o peso.';
-}
-
 export function initDisplay(): void {
   each<HTMLInputElement>('input[name=cm]', (r) => {
-    r.addEventListener('change', () => { display.colorMode = r.value as ColorMode; help(); emit('view'); });
+    r.addEventListener('change', () => { display.colorMode = r.value as ColorMode; emit('view'); });
   });
   each<HTMLInputElement>('input[name=lm]', (r) => {
     r.addEventListener('change', () => {
@@ -41,8 +32,6 @@ export function initDisplay(): void {
     filters.minActivities = Number(ms.value); $('mv').textContent = String(filters.minActivities); emitSoon('filters');
   });
 
-  on('peso', help);
-
   // Sincroniza com o estado (ex.: depois de "Limpar filtros").
   on('filters', () => {
     ext.checked = filters.showExternal;
@@ -50,5 +39,4 @@ export function initDisplay(): void {
       ms.value = String(filters.minActivities); $('mv').textContent = String(filters.minActivities); paintMs();
     }
   });
-  help();
 }

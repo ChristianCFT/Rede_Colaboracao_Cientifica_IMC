@@ -11,11 +11,6 @@
   margin-top: 8px;
 }
 
-.help {
-  margin: 12px 0 0;
-  font-size: 12px;
-}
-
 /* Acordeões: o chevron fica na margem esquerda, alinhando o texto com o restante da barra. */
 .acc-h {
   display: flex;

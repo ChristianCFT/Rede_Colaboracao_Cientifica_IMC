@@ -42,8 +42,6 @@ export interface View {
   deg: Int32Array;
   /** Atividades distintas visíveis por nó. */
   vol: Int32Array;
-  /** Força de colaboração por nó: soma dos pesos das arestas visíveis (grau ponderado). */
-  forca: Float64Array;
   /** Contadores das facetas (cada faceta ignora o próprio filtro, como numa busca facetada). */
   facets: Facets;
   stats: MainStats;
@@ -129,13 +127,9 @@ function filterNodes(eOn: Uint8Array): Uint8Array {
   return nOn;
 }
 
-function nodeTotals(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array, fw: Float64Array): { deg: Int32Array; vol: Int32Array; forca: Float64Array } {
-  const deg = new Int32Array(N.length), forca = new Float64Array(N.length);
-  for (let j = 0; j < E.length; j++) {
-    if (!eOn[j]) continue;
-    deg[E[j]!.a]!++; deg[E[j]!.b]!++;
-    forca[E[j]!.a]! += fw[j]!; forca[E[j]!.b]! += fw[j]!;
-  }
+function nodeTotals(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array): { deg: Int32Array; vol: Int32Array } {
+  const deg = new Int32Array(N.length);
+  for (let j = 0; j < E.length; j++) if (eOn[j]) { deg[E[j]!.a]!++; deg[E[j]!.b]!++; }
   // Atividades distintas por nó (marcação com "carimbo" para evitar Sets).
   const vol = new Int32Array(N.length);
   const stamp = new Int32Array(NCODES).fill(-1);
@@ -148,7 +142,7 @@ function nodeTotals(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array, fw: Float6
     }
     vol[i] = c;
   }
-  return { deg, vol, forca };
+  return { deg, vol };
 }
 
 function mainStats(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array): MainStats {
@@ -173,7 +167,7 @@ export function getView(): View {
   const { inWin, ok } = activityMasks();
   const { fsum, fw, eOn, facets } = filterEdges(inWin, ok);
   const nOn = filterNodes(eOn);
-  memo = { ver, inWin, ok, fsum, fw, eOn, nOn, ...nodeTotals(eOn, nOn, ok, fw), facets, stats: mainStats(eOn, nOn, ok) };
+  memo = { ver, inWin, ok, fsum, fw, eOn, nOn, ...nodeTotals(eOn, nOn, ok), facets, stats: mainStats(eOn, nOn, ok) };
   return memo;
 }
 

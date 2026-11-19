@@ -139,10 +139,10 @@ janela temporal recalcula o peso só com as atividades visíveis, na mesma escal
 
 - **espessura da ligação** = peso, pela raiz de peso ÷ maior peso da rede, para que as ligações fracas
   continuem visíveis. As mais fortes são desenhadas por cima, e a legenda mostra três espessuras de referência;
-- **clique em uma ligação**: o peso, a faixa (fraca, moderada, forte ou muito forte, pela posição na
-  rede visível), a posição entre as ligações e como o peso é calculado. O vetor e as atividades não aparecem;
-- **clique em um nó**: a força de colaboração (soma dos pesos das suas ligações) e os parceiros por peso;
-- **sem seleção**: os pesquisadores com maior força e as ligações mais fortes.
+- **clique em uma ligação**: o peso, a posição entre as ligações visíveis e como o peso é calculado.
+  O vetor e as atividades não aparecem;
+- **clique em um nó**: os parceiros ordenados pelo peso da relação com cada um;
+- **sem seleção**: as ligações mais fortes.
 
 Os α ficam em `backend/src/config.py` (`ALFAS`) e a fórmula em `backend/src/engine/peso.py`. O frontend
 usa a mesma fórmula em `frontend/src/core/peso.ts`, para recalcular o peso no recorte.

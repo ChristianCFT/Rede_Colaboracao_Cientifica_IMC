@@ -98,7 +98,7 @@ def get_engine() -> Engine:
     nos = loaders.vertices(d['entrada'], urls)
     arestas = loaders.arestas(d['saida'], nos)
     G = loaders.grafo(nos, arestas)
-    principal = Universo(nos, arestas, dict(G.degree()), layout.livre(G), layout.por_area(nos, G))
+    principal = Universo(nos, arestas, dict(G.degree()), layout.livre(nos, G), layout.por_area(nos, G))
 
     part = loaders.participacoes(d['atividades'])
     extra = loaders.sem_colaboracao(d['unifei'], nos, d['saida'], urls, part)

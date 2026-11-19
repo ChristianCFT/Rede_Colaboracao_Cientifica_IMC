@@ -167,7 +167,7 @@ details.all > summary {
   margin-top: 14px;
 }
 
-/* Modo peso: valor em destaque, faixa de leitura e barra de 0 a 1 */
+/* Modo peso: valor em destaque e barra de 0 a 1 */
 .peso {
   display: flex;
   align-items: baseline;
@@ -178,14 +178,6 @@ details.all > summary {
 .peso b {
   font-size: 26px;
   font-weight: 600;
-}
-
-.faixa {
-  padding: 1px 8px;
-  border-radius: 9px;
-  background: var(--pn2);
-  border: 1px solid var(--bd);
-  font-size: 11px;
 }
 
 .escala {
