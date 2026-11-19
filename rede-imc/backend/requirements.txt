@@ -5,3 +5,7 @@ pandas>=2.0
 networkx>=3.2
 numpy
 scipy
+
+# mineração (mineracao/main.py)
+beautifulsoup4>=4.12,<5
+lxml>=4.9
