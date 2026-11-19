@@ -15,6 +15,7 @@ import { initRender, resize } from './graph/render/scene';
 import { initCameraControls } from './ui/cameraControls';
 import { initDetails } from './ui/details';
 import { initHUD } from './ui/hud';
+import { initPesoToggle } from './ui/pesoToggle';
 import { initSidebar } from './ui/sidebar';
 
 const boot = document.createElement('div');
@@ -39,6 +40,7 @@ async function start(): Promise<void> {
   initSidebar();
   initHUD();
   initCameraControls();
+  initPesoToggle();
   initDetails();
   initMouse();
   boot.remove();

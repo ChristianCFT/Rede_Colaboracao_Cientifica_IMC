@@ -1,5 +1,8 @@
-// Arestas: cor por instituto ou área, espessura pelas atividades em comum no recorte.
+// Arestas: cor por instituto ou área. Espessura pelas atividades em comum no recorte (modo contagem)
+// ou pelo peso normalizado da colaboração (modo peso, com as arestas mais fortes desenhadas por cima).
 import { E, GC, N, col } from '../../core/model';
+import { escala } from '../../core/peso';
+import type { View } from '../../core/selectors';
 import { display } from '../../core/state';
 import type { GEdge } from '../../core/types';
 import { sx, sy } from '../interaction/camera';
@@ -15,7 +18,19 @@ function edgeColor(e: GEdge): string {
   return col((a.inst === 'IMC' ? b : a).inst);
 }
 
-const width = (f: Frame, e: GEdge): number => Math.min(6, 0.5 + 0.7 * Math.log2(1 + f.view.fsum[e.i]!));
+/** Modo peso: de 0,5 a 6 px, pela escala do peso (raiz de W / maior W da rede; a legenda usa a mesma). */
+export const espessuraDoPeso = (w: number): number => 0.5 + 5.5 * escala(w);
+
+const width = (f: Frame, e: GEdge): number => (display.peso
+  ? espessuraDoPeso(f.view.fw[e.i]!)
+  : Math.min(6, 0.5 + 0.7 * Math.log2(1 + f.view.fsum[e.i]!)));
+
+// Ordem de desenho no modo peso: da mais fraca para a mais forte, recalculada só quando o recorte muda.
+let ordem: { ver: number; lista: GEdge[] } = { ver: -1, lista: [] };
+function porPeso(v: View): GEdge[] {
+  if (ordem.ver !== v.ver) ordem = { ver: v.ver, lista: [...E].sort((p, q) => v.fw[p.i]! - v.fw[q.i]!) };
+  return ordem.lista;
+}
 
 const offscreen = (f: Frame, x1: number, y1: number, x2: number, y2: number): boolean =>
   (x1 < 0 && x2 < 0) || (x1 > f.W && x2 > f.W) || (y1 < 0 && y2 < 0) || (y1 > f.H && y2 > f.H);
@@ -25,7 +40,7 @@ export function drawEdges(f: Frame): void {
   const { ctx, view, focus } = f;
   const highlighted: GEdge[] = [];
   ctx.globalAlpha = focus.active ? 0.04 : 0.28;
-  for (const e of E) {
+  for (const e of display.peso ? porPeso(view) : E) {
     if (!view.eOn[e.i]) continue;
     if (focus.active && isHighlighted(focus, e)) { highlighted.push(e); continue; }
     const a = N[e.a]!, b = N[e.b]!, x1 = sx(a.x), y1 = sy(a.y), x2 = sx(b.x), y2 = sy(b.y);

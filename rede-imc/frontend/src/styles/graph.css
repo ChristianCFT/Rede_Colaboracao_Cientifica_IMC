@@ -73,3 +73,97 @@ canvas {
   font-size: 12px;
   border-radius: 6px;
 }
+
+/* Interruptor "Peso da colaboração" e legenda da espessura (canto inferior esquerdo) */
+.peso-ctl {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  padding: 4px;
+  max-width: calc(100% - 80px);
+}
+
+.peso-ctl .chave {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--tx);
+  font-weight: 600;
+}
+
+.peso-ctl .chave:hover {
+  background: var(--hov);
+}
+
+.peso-ctl .chave svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Trilho do interruptor: o pino vai para a direita e o trilho ganha a cor de destaque quando ligado */
+.peso-ctl .trilho {
+  position: relative;
+  width: 30px;
+  height: 17px;
+  border-radius: 9px;
+  background: var(--bd);
+  transition: background .15s;
+}
+
+.peso-ctl .pino {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  transition: transform .15s;
+}
+
+.peso-ctl.ligado .trilho {
+  background: var(--ac);
+}
+
+.peso-ctl.ligado .pino {
+  transform: translateX(13px);
+}
+
+.peso-ctl.ligado .chave svg {
+  color: var(--ac);
+}
+
+/* Legenda: só aparece com o peso ligado */
+.peso-ctl .legenda {
+  display: none;
+  padding: 2px 8px 6px;
+  font-size: 11px;
+}
+
+.peso-ctl.ligado .legenda {
+  display: block;
+}
+
+.peso-ctl .amostras {
+  display: grid;
+  grid-template-columns: 36px auto 1fr;
+  align-items: center;
+  gap: 2px 8px;
+  margin-top: 4px;
+}
+
+.peso-ctl .amostras svg {
+  width: 36px;
+  height: 10px;
+  stroke: var(--tx);
+  stroke-linecap: round;
+}

@@ -39,6 +39,13 @@ class Edge(BaseModel):
     vetor_contagem: list[int] = Field(min_length=5, max_length=5)
     vetor_bruto: list[list[str]]
     soma_bruta: int
+    peso: float           # peso normalizado da colaboração, de 0 a 1 (engine/peso.py)
+
+
+class PesoParametros(BaseModel):
+    """O que o frontend precisa para recalcular o peso no recorte (filtros de dimensão e período)."""
+    alfas: list[float]        # importância de cada dimensão, na ordem do vetor contagem (soma 1)
+    referencias: list[int]    # maior contagem de cada dimensão na rede inteira (base comum)
 
 
 class Atividade(BaseModel):
@@ -54,6 +61,7 @@ class Graph(BaseModel):
     paleta: dict[str, str]
     cores_grupo: dict[str, str]
     dimensoes: list[str]
+    peso: PesoParametros
 
 
 class AtividadeDetalhe(Atividade):
@@ -67,6 +75,7 @@ class Vizinho(BaseModel):
     instituto: str
     tipo_relacao: str
     soma_bruta: int
+    peso: float
     vetor_contagem: list[int]
     atividades: list[AtividadeDetalhe]
 

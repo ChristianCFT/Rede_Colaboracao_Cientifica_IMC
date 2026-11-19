@@ -122,8 +122,30 @@ Abra <http://localhost:5173>. O Vite encaminha as chamadas `/api` para o backend
 | **Exibição** | Rótulos do IMC, externos (EXT) e mínimo de atividades em comum |
 | **Clique em um nó** | Painel com as 5 dimensões, os principais parceiros e as conexões |
 | **Clique em uma ligação** | Lista todas as atividades da dupla, por dimensão e ano |
+| **Peso da colaboração** (canto inferior esquerdo, tecla P) | Liga o modo peso, explicado abaixo |
 
 Os indicadores no topo (HUD) sempre se referem à rede principal do IMC.
+
+### Modo peso
+
+Desligado, a rede usa a contagem de atividades em comum, sem normalização. Ligado, cada ligação passa
+a ter um **peso de 0 a 1**, calculado como na proposta metodológica:
+
+- cada dimensão vira `ln(1 + x) / ln(1 + maior valor da rede)`;
+- o peso é a soma ponderada: Artigos 0,40 · Projetos 0,20 · Orientações 0,20 · Produção técnica 0,15 · Bancas 0,05.
+
+Os maiores valores vêm da rede inteira e não mudam com os filtros. Desligar uma dimensão ou estreitar a
+janela temporal recalcula o peso só com as atividades visíveis, na mesma escala. No modo peso:
+
+- **espessura da ligação** = peso, pela raiz de peso ÷ maior peso da rede, para que as ligações fracas
+  continuem visíveis. As mais fortes são desenhadas por cima, e a legenda mostra três espessuras de referência;
+- **clique em uma ligação**: o peso, a faixa (fraca, moderada, forte ou muito forte, pela posição na
+  rede visível), a posição entre as ligações e como o peso é calculado. O vetor e as atividades não aparecem;
+- **clique em um nó**: a força de colaboração (soma dos pesos das suas ligações) e os parceiros por peso;
+- **sem seleção**: os pesquisadores com maior força e as ligações mais fortes.
+
+Os α ficam em `backend/src/config.py` (`ALFAS`) e a fórmula em `backend/src/engine/peso.py`. O frontend
+usa a mesma fórmula em `frontend/src/core/peso.ts`, para recalcular o peso no recorte.
 
 ---
 
@@ -133,8 +155,8 @@ Prefixo `/api/v1`. Somente leitura (GET).
 
 | Rota | Retorna |
 |---|---|
-| `GET /api/v1/graph` | A rede inteira: nós, ligações, pesquisadores sem colaboração, atividades, paleta e dimensões |
-| `GET /api/v1/nodes/{node_id}` | Detalhes de um pesquisador e seus vizinhos (404 se não existir) |
+| `GET /api/v1/graph` | A rede inteira: nós, ligações (com `peso`), pesquisadores sem colaboração, atividades, paleta, dimensões e os parâmetros do peso (`alfas`, `referencias`) |
+| `GET /api/v1/nodes/{node_id}` | Detalhes de um pesquisador e seus vizinhos, com o `peso` de cada relação (404 se não existir) |
 
 ---
 
@@ -153,12 +175,12 @@ rede-imc/
 │   │   └── dados/brutos/         ZIP dos currículos
 │   └── src/                      API
 │       ├── main.py               aplicação FastAPI
-│       ├── config.py             caminhos, colunas, paleta e regras de área
+│       ├── config.py             caminhos, colunas, paleta, regras de área e α do peso
 │       ├── routes/               definição das rotas
 │       ├── controllers/          camada HTTP (erros → status)
 │       ├── services/             regras da aplicação
 │       ├── schemas/              modelos Pydantic
-│       └── engine/               leitura dos CSVs, grafo NetworkX e layout
+│       └── engine/               leitura dos CSVs, grafo NetworkX, layout e peso das ligações
 └── frontend/
     ├── index.html
     ├── vite.config.ts            proxy /api → backend

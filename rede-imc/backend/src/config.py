@@ -13,6 +13,10 @@ COLUNAS_ATIVIDADES = ['id_atividade', 'dimensao', 'ano', 'titulo', 'ids_particip
 DIMS = ['art', 'prj', 'ori', 'ban', 'ptt']  # ordem do vetor contagem
 DIMN = ['Artigos', 'Projetos', 'Orientações', 'Bancas', 'Prod. téc.']
 
+# Peso da colaboração (proposta metodológica, seção 5): importância de cada dimensão, somando 1.
+# Ligado pelo nome da dimensão (não pela posição): pesos 4 / 2 / 2 / 1,5 / 0,5 de um total de 10.
+ALFAS = {'art': 0.40, 'prj': 0.20, 'ori': 0.20, 'ptt': 0.15, 'ban': 0.05}
+
 # Um professor com várias áreas entra em todos os grupos cujas palavras-chave aparecerem.
 REGRAS_AREA = {'Computação': ['ciência da computação'],
                'Matemática': ['matemática', 'probabilidade e estatística']}

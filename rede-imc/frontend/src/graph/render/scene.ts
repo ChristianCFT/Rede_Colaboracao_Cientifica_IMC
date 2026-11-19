@@ -56,6 +56,6 @@ export function exportPNG(name = 'grafo_IMC.png'): void {
 export function initRender(): void {
   readTheme();
   window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => { readTheme(); requestDraw(); });
-  on('filters', requestDraw); on('selection', requestDraw); on('view', requestDraw);
+  on('filters', requestDraw); on('selection', requestDraw); on('view', requestDraw); on('peso', requestDraw);
   window.addEventListener('resize', resize);
 }

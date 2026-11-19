@@ -166,3 +166,67 @@ details.all > summary {
 .empty {
   margin-top: 14px;
 }
+
+/* Modo peso: valor em destaque, faixa de leitura e barra de 0 a 1 */
+.peso {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 4px 0;
+}
+
+.peso b {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.faixa {
+  padding: 1px 8px;
+  border-radius: 9px;
+  background: var(--pn2);
+  border: 1px solid var(--bd);
+  font-size: 11px;
+}
+
+.escala {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--pn2);
+  overflow: hidden;
+}
+
+.escala span {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--ac);
+}
+
+/* "Como o peso é calculado": tipo · importância · maior valor na rede */
+details.como {
+  margin-top: 14px;
+}
+
+details.como > summary {
+  cursor: pointer;
+  color: var(--lk);
+}
+
+.alfas {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 3px 12px;
+  margin: 6px 0;
+  align-items: center;
+}
+
+.alfas > span:first-child,
+.alfas > span:nth-child(2),
+.alfas > span:nth-child(3) {
+  font-size: 11px;
+}
+
+.alfas b,
+.alfas > span:nth-child(3n) {
+  text-align: right;
+}

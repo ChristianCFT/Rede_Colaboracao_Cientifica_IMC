@@ -4,6 +4,7 @@
 //  - 'filters'   o recorte mudou (filtros ou rede ampliada) → invalida o recorte memoizado (selectors.ts)
 //  - 'selection' nó/aresta selecionado mudou
 //  - 'view'      só a aparência mudou (hover, câmera, cores, rótulos) → redesenha o canvas
+//  - 'peso'      o modo peso foi ligado ou desligado → redesenha o canvas, os painéis e a ajuda
 import type { ColorMode, GNode, LayoutMode } from './types';
 import { E, YMAX, YMIN } from './model';
 
@@ -33,7 +34,16 @@ export const display = {
   layoutMode: 'free' as LayoutMode,
   labelsImc: true,
   physics: true,
+  /** Modo peso: espessura das arestas e painéis pelo peso normalizado da colaboração (0 a 1).
+   *  Desligado, tudo funciona pela contagem de atividades em comum, como antes. */
+  peso: false,
 };
+
+/** Liga ou desliga o modo peso. */
+export function setPeso(ligado: boolean): void {
+  display.peso = ligado;
+  emit('peso');
+}
 
 /** Pesquisadores sem colaboração com o IMC (só vértices, em anel ao redor da rede principal). */
 export const extended = { visible: false };
@@ -47,8 +57,8 @@ export const passesArea = (n: GNode): boolean =>
 export const fullYearRange = (): boolean => filters.yearFrom <= YMIN && filters.yearTo >= YMAX;
 
 // ---- Barramento ----
-type Topic = 'filters' | 'selection' | 'view';
-const subs: Record<Topic, (() => void)[]> = { filters: [], selection: [], view: [] };
+type Topic = 'filters' | 'selection' | 'view' | 'peso';
+const subs: Record<Topic, (() => void)[]> = { filters: [], selection: [], view: [], peso: [] };
 let ver = 0;
 /** Versão do recorte: muda a cada emit('filters'); é a chave da memoização. */
 export const filterVer = (): number => ver;

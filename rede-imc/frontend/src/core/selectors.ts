@@ -5,6 +5,7 @@
 // "Incluir pesquisadores sem colaboração com o IMC" estiver marcada, e não entram em facetas nem
 // indicadores, que contam apenas a rede principal.
 import { CODE_DIM, CODE_YEAR, E, N, NCODES } from './model';
+import { pesoDe } from './peso';
 import { extended, filterVer, filters, fullYearRange, passesArea } from './state';
 
 export interface Facets {
@@ -33,12 +34,16 @@ export interface View {
   ok: Uint8Array;
   /** Atividades em comum por aresta no recorte (espessura, ordenação e "mín. de atividades"). */
   fsum: Int32Array;
+  /** Peso normalizado de cada aresta no recorte: só as atividades visíveis, referências fixas da rede. */
+  fw: Float64Array;
   eOn: Uint8Array;
   nOn: Uint8Array;
   /** Nº de parceiros visíveis por nó. */
   deg: Int32Array;
   /** Atividades distintas visíveis por nó. */
   vol: Int32Array;
+  /** Força de colaboração por nó: soma dos pesos das arestas visíveis (grau ponderado). */
+  forca: Float64Array;
   /** Contadores das facetas (cada faceta ignora o próprio filtro, como numa busca facetada). */
   facets: Facets;
   stats: MainStats;
@@ -66,9 +71,10 @@ function activityMasks(): { inWin: Uint8Array; ok: Uint8Array } {
   return { inWin, ok };
 }
 
-function filterEdges(inWin: Uint8Array, ok: Uint8Array): { fsum: Int32Array; eOn: Uint8Array; facets: Facets } {
+function filterEdges(inWin: Uint8Array, ok: Uint8Array): { fsum: Int32Array; fw: Float64Array; eOn: Uint8Array; facets: Facets } {
   const m = E.length;
-  const fsum = new Int32Array(m), eOn = new Uint8Array(m);
+  const fsum = new Int32Array(m), fw = new Float64Array(m), eOn = new Uint8Array(m);
+  const contagem = [0, 0, 0, 0, 0];
   const types: Record<string, number> = {};
   Object.keys(filters.types).forEach((t) => { types[t] = 0; });
   const groupMark = new Uint8Array(N.length);
@@ -80,10 +86,13 @@ function filterEdges(inWin: Uint8Array, ok: Uint8Array): { fsum: Int32Array; eOn
     const ed = E[e]!, a = N[ed.a]!, b = N[ed.b]!;
     let s = 0;
     for (let j = 0; j < 5; j++) {
-      if (!filters.dims[j]) continue;
-      for (const k of ed.cd[j]!) s += ok[k]!;
+      let c = 0;
+      if (filters.dims[j]) for (const k of ed.cd[j]!) c += ok[k]!;
+      contagem[j] = c;
+      s += c;
     }
     fsum[e] = s;
+    fw[e] = pesoDe(contagem);
     const pT = filters.types[ed.tipo] ?? true;
     const pA = passesArea(a) && passesArea(b);
     const pX = filters.showExternal || (a.inst !== 'EXT' && b.inst !== 'EXT');
@@ -105,7 +114,7 @@ function filterEdges(inWin: Uint8Array, ok: Uint8Array): { fsum: Int32Array; eOn
   const groups: Record<string, number> = {};
   Object.keys(filters.groups).forEach((g) => { groups[g] = 0; });
   groupMark.forEach((v, i) => { if (v) groupsOf(i).forEach((g) => { groups[g] = (groups[g] ?? 0) + 1; }); });
-  return { fsum, eOn, facets: { types, groups, dims, win } };
+  return { fsum, fw, eOn, facets: { types, groups, dims, win } };
 }
 
 function filterNodes(eOn: Uint8Array): Uint8Array {
@@ -120,9 +129,13 @@ function filterNodes(eOn: Uint8Array): Uint8Array {
   return nOn;
 }
 
-function nodeTotals(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array): { deg: Int32Array; vol: Int32Array } {
-  const deg = new Int32Array(N.length);
-  for (let j = 0; j < E.length; j++) if (eOn[j]) { deg[E[j]!.a]!++; deg[E[j]!.b]!++; }
+function nodeTotals(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array, fw: Float64Array): { deg: Int32Array; vol: Int32Array; forca: Float64Array } {
+  const deg = new Int32Array(N.length), forca = new Float64Array(N.length);
+  for (let j = 0; j < E.length; j++) {
+    if (!eOn[j]) continue;
+    deg[E[j]!.a]!++; deg[E[j]!.b]!++;
+    forca[E[j]!.a]! += fw[j]!; forca[E[j]!.b]! += fw[j]!;
+  }
   // Atividades distintas por nó (marcação com "carimbo" para evitar Sets).
   const vol = new Int32Array(N.length);
   const stamp = new Int32Array(NCODES).fill(-1);
@@ -135,7 +148,7 @@ function nodeTotals(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array): { deg: In
     }
     vol[i] = c;
   }
-  return { deg, vol };
+  return { deg, vol, forca };
 }
 
 function mainStats(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array): MainStats {
@@ -158,9 +171,9 @@ export function getView(): View {
   const ver = filterVer();
   if (memo && memo.ver === ver) return memo;
   const { inWin, ok } = activityMasks();
-  const { fsum, eOn, facets } = filterEdges(inWin, ok);
+  const { fsum, fw, eOn, facets } = filterEdges(inWin, ok);
   const nOn = filterNodes(eOn);
-  memo = { ver, inWin, ok, fsum, eOn, nOn, ...nodeTotals(eOn, nOn, ok), facets, stats: mainStats(eOn, nOn, ok) };
+  memo = { ver, inWin, ok, fsum, fw, eOn, nOn, ...nodeTotals(eOn, nOn, ok, fw), facets, stats: mainStats(eOn, nOn, ok) };
   return memo;
 }
 

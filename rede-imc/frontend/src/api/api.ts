@@ -9,7 +9,11 @@ export interface NodeDTO {
 export interface EdgeDTO {
   source: string; target: string; tipo_relacao: string;
   vetor_contagem: number[]; vetor_bruto: string[][]; soma_bruta: number;
+  /** Peso normalizado da colaboração (0 a 1), com todas as atividades da dupla. */
+  peso: number;
 }
+/** Parâmetros para recalcular o peso no recorte: α e maior contagem de cada dimensão na rede. */
+export interface PesoDTO { alfas: number[]; referencias: number[] }
 export interface AtividadeDTO { ano: string; titulo: string }
 export interface GraphDTO {
   nodes: NodeDTO[]; edges: EdgeDTO[];
@@ -17,9 +21,10 @@ export interface GraphDTO {
   sem_colaboracao: NodeDTO[];
   atividades: Record<string, AtividadeDTO>;
   paleta: Record<string, string>; cores_grupo: Record<string, string>; dimensoes: string[];
+  peso: PesoDTO;
 }
 export interface NodeDetailDTO extends NodeDTO {
-  vizinhos: { id: string; label: string; instituto: string; tipo_relacao: string; soma_bruta: number;
+  vizinhos: { id: string; label: string; instituto: string; tipo_relacao: string; soma_bruta: number; peso: number;
               vetor_contagem: number[]; atividades: (AtividadeDTO & { id: string; dimensao: string })[] }[];
 }
 

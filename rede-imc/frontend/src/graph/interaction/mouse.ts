@@ -1,7 +1,7 @@
 // Mouse e teclado no canvas: zoom, pan, arrastar nós, hover (holofote + tooltip) e clique.
 import { $, esc, fmt } from '../../core/dom';
 import { E, N } from '../../core/model';
-import { camera, emit, selection } from '../../core/state';
+import { camera, display, emit, selection, setPeso } from '../../core/state';
 import { getView } from '../../core/selectors';
 import { dragEnd, dragMove, dragStart } from '../physics';
 import { nodeRadius } from '../render/nodes';
@@ -91,7 +91,8 @@ export function initMouse(): void {
   });
   cv.addEventListener('dblclick', (e) => { if (nodeAt(e.offsetX, e.offsetY) < 0) fitView(); });
 
-  // Atalhos de teclado (fora de campos de texto): Esc limpa a seleção, +/− zoom, F enquadra.
+  // Atalhos de teclado (fora de campos de texto): Esc limpa a seleção, +/− zoom, F enquadra,
+  // P liga/desliga o modo peso.
   window.addEventListener('keydown', (e) => {
     const t = e.target as HTMLElement | null;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
@@ -99,5 +100,6 @@ export function initMouse(): void {
     else if (e.key === '+' || e.key === '=') zoomBy(1.4);
     else if (e.key === '-') zoomBy(1 / 1.4);
     else if (e.key === 'f' || e.key === 'F') fitView();
+    else if (e.key === 'p' || e.key === 'P') setPeso(!display.peso);
   });
 }

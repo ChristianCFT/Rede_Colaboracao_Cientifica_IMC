@@ -3,6 +3,7 @@
 // marcados com `extended`, para reaproveitar renderização, física e interação sem duplicá-las.
 // Eles são só vértices: E contém apenas as relações da rede principal.
 import type { GraphDTO, NodeDTO } from '../api/api';
+import { initPeso } from './peso';
 import type { GEdge, GNode, Pt } from './types';
 
 export let N: GNode[] = [];
@@ -77,10 +78,11 @@ export function initModel(g: GraphDTO): void {
     const a = IX.get(e.source), b = IX.get(e.target);
     if (a === undefined || b === undefined) return [];
     const cd = e.vetor_bruto.map((ids, j) => ids.map((c) => codeOf(c, j)));
-    return [{ i: 0, a, b, tipo: e.tipo_relacao, vc: e.vetor_contagem, sum: e.soma_bruta, cd }];
+    return [{ i: 0, a, b, tipo: e.tipo_relacao, vc: e.vetor_contagem, sum: e.soma_bruta, w: e.peso, cd }];
   }).map((e, i) => ({ ...e, i }));
   E.forEach((e) => { N[e.a]!.adj.push(e.i); N[e.b]!.adj.push(e.i); });
   MAIN_EDGES = E.length;
+  initPeso(g.peso.alfas, g.peso.referencias, E.map((e) => e.w));
 
   NCODES = CODE.length;
   CODE_DIM = Uint8Array.from(dims);

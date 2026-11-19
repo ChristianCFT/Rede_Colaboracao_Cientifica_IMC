@@ -21,6 +21,8 @@ export interface GNode {
 
 export interface GEdge {
   i: number; a: number; b: number; tipo: string; vc: number[]; sum: number;
+  /** Peso normalizado da relação inteira (0 a 1), vindo do backend. */
+  w: number;
   /** Atividades da relação por dimensão, como índices inteiros (para filtrar rápido). */
   cd: number[][];
 }

@@ -9,8 +9,9 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from src.config import COR_GRUPO, DIMN, DIMS, PALETA
-from src.engine import layout, loaders
-from src.schemas.graph_schema import Atividade, AtividadeDetalhe, Edge, Graph, Node, NodeDetail, Producao, Vizinho
+from src.engine import layout, loaders, peso
+from src.schemas.graph_schema import (Atividade, AtividadeDetalhe, Edge, Graph, Node, NodeDetail, PesoParametros,
+                                      Producao, Vizinho)
 
 
 class NodeNotFound(Exception):
@@ -39,21 +40,22 @@ class Universo:
         return {k: e for k, e in self.arestas.items() if sum(e['vc']) >= 1}
 
 
-def _edge(k: tuple, e: dict) -> Edge:
+def _edge(k: tuple, e: dict, maiores: list[int]) -> Edge:
     return Edge(source=k[0], target=k[1], tipo_relacao=e['tipo'], vetor_contagem=e['vc'], vetor_bruto=e['vb'],
-                soma_bruta=sum(e['vc']))
+                soma_bruta=sum(e['vc']), peso=round(peso.peso_da_relacao(e['vc'], maiores), 6))
 
 
-def _resposta(principal: Universo, sem_colab: Universo, atividades: dict) -> Graph:
+def _resposta(principal: Universo, sem_colab: Universo, atividades: dict, maiores: list[int]) -> Graph:
     """Monta a resposta de /graph (calculada uma única vez)."""
     ed = principal.com_atividades()
     com_aresta = {x for k in ed for x in k}
     nos = [k for k, v in principal.nos.items() if k in com_aresta or v['instituto'] == 'IMC']
     refs = {i for e in ed.values() for ids in e['vb'] for i in ids}
-    return Graph(nodes=[principal.node(k) for k in nos], edges=[_edge(k, e) for k, e in ed.items()],
+    return Graph(nodes=[principal.node(k) for k in nos], edges=[_edge(k, e, maiores) for k, e in ed.items()],
                  sem_colaboracao=[sem_colab.node(k) for k in sem_colab.nos],
                  atividades={i: Atividade(**atividades[i]) for i in refs if i in atividades},
-                 paleta=PALETA, cores_grupo=COR_GRUPO, dimensoes=DIMN)
+                 paleta=PALETA, cores_grupo=COR_GRUPO, dimensoes=DIMN,
+                 peso=PesoParametros(alfas=peso.alfas_em_ordem(), referencias=maiores))
 
 
 @dataclass
@@ -61,6 +63,7 @@ class Engine:
     principal: Universo
     sem_colab: Universo
     atividades: dict
+    maiores: list[int]      # referências do peso: maior contagem de cada dimensão na rede principal
     resposta: Graph
 
     def graph(self) -> Graph:
@@ -80,7 +83,8 @@ class Engine:
                                      **self.atividades.get(i, {'ano': '', 'titulo': '(não encontrada)'}))
                     for j, ids in enumerate(e['vb']) for i in ids]
             viz.append(Vizinho(id=o, label=u.nos[o]['label'], instituto=u.nos[o]['instituto'], tipo_relacao=e['tipo'],
-                               soma_bruta=sum(e['vc']), vetor_contagem=e['vc'], atividades=acts))
+                               soma_bruta=sum(e['vc']), peso=round(peso.peso_da_relacao(e['vc'], self.maiores), 6),
+                               vetor_contagem=e['vc'], atividades=acts))
         viz.sort(key=lambda v: -v.soma_bruta)
         return NodeDetail(**u.node(k).model_dump(), vizinhos=viz)
 
@@ -101,4 +105,5 @@ def get_engine() -> Engine:
     sem_colab = Universo(extra, {}, {}, layout.anel(extra, principal.pos_livre), layout.anel(extra, principal.pos_area))
 
     acts = loaders.atividades(d['atividades'])
-    return Engine(principal, sem_colab, acts, _resposta(principal, sem_colab, acts))
+    maiores = peso.referencias(principal.com_atividades())  # base comum: todas as relações enviadas
+    return Engine(principal, sem_colab, acts, maiores, _resposta(principal, sem_colab, acts, maiores))

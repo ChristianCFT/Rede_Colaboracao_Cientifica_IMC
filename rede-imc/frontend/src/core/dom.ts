@@ -15,6 +15,10 @@ const nf1 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 1, maximumFr
 export const fmt = (n: number): string => nf0.format(n);
 /** 3.806 → "3,8" */
 export const fmt1 = (n: number): string => nf1.format(n);
+const nf2 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const nf3 = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+/** Peso: 0.4213 → "0,42"; abaixo de 0,01 com três casas (0.0042 → "0,004"), para não virar "0,00". */
+export const fmtPeso = (w: number): string => (w > 0 && w < 0.01 ? nf3.format(w) : nf2.format(w));
 /** 0.684 → "68%" (com uma casa abaixo de 10%). */
 export const pct = (x: number): string => (x > 0 && x < 0.1 ? `${fmt1(x * 100)}%` : `${Math.round(x * 100)}%`);
 

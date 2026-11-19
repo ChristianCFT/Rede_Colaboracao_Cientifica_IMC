@@ -4,6 +4,7 @@ import { esc, fmt } from '../../core/dom';
 import { DIMN, DIM_LONG, E, GC, IX, N, col, dimCol } from '../../core/model';
 import { filters } from '../../core/state';
 import { getView, nodeDims } from '../../core/selectors';
+import type { View } from '../../core/selectors';
 import { api } from '../../api/api';
 import type { NodeDetailDTO } from '../../api/api';
 import { bars, dot, personRow, vec } from './parts';
@@ -11,7 +12,18 @@ import { bars, dot, personRow, vec } from './parts';
 // Detalhe vindo de GET /nodes/{id}: define a ordem da lista completa de conexões.
 const detail = new Map<string, NodeDetailDTO>();
 const loading = new Set<string>();
-let allOpen = false;
+/** "Todas as conexões" aberta ou fechada (vale também para o painel do modo peso). */
+export let allOpen = false;
+
+/** Identificação do pesquisador: nome, instituto, área, parceiros, Lattes e avisos (os dois modos usam). */
+export function cabecalho(i: number, v: View): string {
+  const n = N[i]!;
+  const out = !v.nOn[i] ? '<p class="mu">Fora do recorte atual — ajuste os filtros para vê-lo no grafo.</p>' : '';
+  const noImc = n.extended ? '<p class="mu">Sem colaboração direta registrada com pesquisadores do IMC.</p>' : '';
+  const degTxt = v.deg[i] === n.deg ? `${fmt(n.deg)} parceiros` : `${fmt(v.deg[i]!)} de ${fmt(n.deg)} parceiros no recorte`;
+  return `<h1>${esc(n.name)}</h1><span class="badge" style="background:${col(n.inst)}">${esc(n.inst)}</span> ${n.inst === 'IMC' ? `<span class="badge" style="background:${GC[n.grp] ?? '#444'}">${esc(n.grp)}</span> ` : ''}<span class="mu num">${degTxt}</span>
+  <p>${n.area ? esc(n.area) : '<span class="mu">Área de atuação ausente na fonte</span>'}</p>${n.lat ? `<p><a href="${esc(n.lat)}" target="_blank" rel="noopener">Currículo Lattes</a></p>` : ''}${noImc}${out}`;
+}
 
 export function nodeView(i: number, rerender: () => void): string {
   const n = N[i]!, v = getView(), fs = v.fsum;
@@ -34,12 +46,7 @@ export function nodeView(i: number, rerender: () => void): string {
     return `<div data-e="${p.e}">${dot(col(o.inst))} ${esc(o.name)} <span class="mu">· ${esc(o.inst)} · <span class="num">${fmt(p.w)}</span></span></div>`;
   }).join('');
 
-  const out = !v.nOn[i] ? '<p class="mu">Fora do recorte atual — ajuste os filtros para vê-lo no grafo.</p>' : '';
-  const noImc = n.extended ? '<p class="mu">Sem colaboração direta registrada com pesquisadores do IMC.</p>' : '';
-  const degTxt = v.deg[i] === n.deg ? `${fmt(n.deg)} parceiros` : `${fmt(v.deg[i]!)} de ${fmt(n.deg)} parceiros no recorte`;
-
-  return `<h1>${esc(n.name)}</h1><span class="badge" style="background:${col(n.inst)}">${esc(n.inst)}</span> ${n.inst === 'IMC' ? `<span class="badge" style="background:${GC[n.grp] ?? '#444'}">${esc(n.grp)}</span> ` : ''}<span class="mu num">${degTxt}</span>
-  <p>${n.area ? esc(n.area) : '<span class="mu">Área de atuação ausente na fonte</span>'}</p>${n.lat ? `<p><a href="${esc(n.lat)}" target="_blank" rel="noopener">Currículo Lattes</a></p>` : ''}${noImc}${out}
+  return `${cabecalho(i, v)}
   <h2>Colaborações por dimensão</h2>
   ${tot ? bars(dims.map((c, j) => ({ label: DIMN[j] ?? '', title: DIM_LONG[j], color: dimCol(j), value: c, frac: c / tot, muted: !filters.dims[j] })))
     : '<p class="mu">Nenhuma colaboração no recorte atual.</p>'}
