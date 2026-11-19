@@ -197,7 +197,7 @@ npm run preview    # testa o build localmente
 Sirva `frontend/dist/` em qualquer servidor estático e ligue o frontend à API de um destes jeitos:
 
 - **Mesmo domínio:** encaminhe `/api` para o backend. Não precisa mudar nada.
-- **Domínios diferentes:** defina a URL da API no build e libere a origem no backend:
+- **Domínios diferentes:** troque `VITE_API_URL` em `frontend/.env` (ou passe a variável no comando do build) e libere a origem no backend:
   ```bash
   VITE_API_URL=https://api.exemplo.com/api/v1 npm run build
   ```
@@ -207,6 +207,6 @@ Sirva `frontend/dist/` em qualquer servidor estático e ligue o frontend à API 
 
 | Variável | Onde | Padrão | Para que serve |
 |---|---|---|---|
-| `VITE_API_URL` | frontend (no build) | `/api/v1` | Endereço da API |
+| `VITE_API_URL` | `frontend/.env` (lido pelo Vite no dev e no build) | `/api/v1` | Endereço da API |
 | `CORS_ORIGINS` | backend | `http://localhost:5173,http://127.0.0.1:5173` | Origens permitidas, separadas por vírgula |
 
