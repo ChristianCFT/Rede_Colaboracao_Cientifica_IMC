@@ -19,7 +19,10 @@ let fY: ForceY<GNode> | null = null;
 /** forceX/forceY guardam os alvos na inicialização: reaplica o acessor quando (ax, ay) mudam. */
 const refreshAnchors = (): void => { fX?.x((n) => n.ax); fY?.y((n) => n.ay); };
 let raf = 0;
-let collideScale = 2.6;
+/** Raio de colisão no layout livre, em múltiplos do raio do nó. Maior = nós mais afastados entre si
+ *  (os leques de externos deixam de virar manchas na visão geral). */
+const COLISAO = 4;
+let collideScale = COLISAO;
 let extentFree = 1;
 
 /** Extensão da rede principal num layout (a escala de colisão acompanha o tamanho do desenho). */
@@ -110,7 +113,7 @@ let tween = 0;
 export function transitionLayout(m: LayoutMode, ms = 650): void {
   cancelAnimationFrame(tween);
   N.forEach((n) => { [n.ax, n.ay] = n.lay[m]; n.vx = 0; n.vy = 0; });
-  collideScale = 2.6 * (extent(m) / extentFree);
+  collideScale = COLISAO * (extent(m) / extentFree);
   if (sim) {
     refreshAnchors();
     (sim.force('link') as ReturnType<typeof forceLink<GNode, Link>>).links(links());

@@ -4,9 +4,18 @@ import { N } from '../../core/model';
 import { camera, emit } from '../../core/state';
 import { getView } from '../../core/selectors';
 
-const K_MIN = 0.02;
 const K_MAX = 20;
-const clampK = (k: number): number => Math.max(K_MIN, Math.min(K_MAX, k));
+/** Até onde dá para afastar: a rede inteira (com o anel) ocupando esta fração da tela. */
+const AFASTAR_ATE = 0.5;
+
+/** Zoom mínimo, calculado a partir do tamanho da rede e da tela (e não um valor fixo). */
+function kMin(): number {
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const p of N) { x0 = Math.min(x0, p.ax); x1 = Math.max(x1, p.ax); y0 = Math.min(y0, p.ay); y1 = Math.max(y1, p.ay); }
+  if (!camera.W || !(x1 > x0) || !(y1 > y0)) return 0.02;
+  return Math.min(camera.W / (x1 - x0), camera.H / (y1 - y0)) * AFASTAR_ATE;
+}
+const clampK = (k: number): number => Math.max(kMin(), Math.min(K_MAX, k));
 const reduced = (): boolean => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
 export const sx = (x: number): number => x * camera.k + camera.tx;

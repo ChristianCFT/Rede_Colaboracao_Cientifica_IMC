@@ -7,24 +7,28 @@ import networkx as nx
 SC = 2000
 CENTROS = {'Computação': (-.8, 0), 'Matemática': (.8, 0), 'Ambas': (0, 0), 'Outras': (0, -.9), 'Sem área': (0, -.9)}
 
+# Distância ideal entre nós no spring_layout (quanto maior, mais espalhado). Cada layout tem o seu:
+K_LIVRE = .8   # livre: abre os leques de externos e o miolo, sem deixar a rede crescer para fora
+K_AREA = .18   # por área: os nós do IMC ficam fixos, e um k alto faria o resto explodir em volta deles
+
 # Anel dos pesquisadores sem colaboração com o IMC (unidades do mundo; a rede principal ocupa ~2·SC × 2·SC).
-FOLGA = 200         # entre o contorno da rede principal e a primeira volta do anel
+FOLGA = 140         # entre o contorno da rede principal e a primeira volta do anel
 VOLTAS = 3          # voltas concêntricas: espalha os pontos e evita que fiquem encostados
-ENTRE_VOLTAS = 120  # distância entre voltas
+ENTRE_VOLTAS = 90   # distância entre voltas
 SETORES = 180       # resolução angular com que o contorno da rede principal é medido
-ALCANCE = 20        # setores vizinhos que o contorno cobre (máximo móvel); evita reentrâncias
-SUAVIZAR = 15       # setores vizinhos na média que arredonda o contorno (sempre < ALCANCE)
+ALCANCE = 12        # setores vizinhos que o contorno cobre (máximo móvel); evita reentrâncias
+SUAVIZAR = 9        # setores vizinhos na média que arredonda o contorno (sempre < ALCANCE)
 
 
-def _spring(G, **kw):
+def _spring(G, k, **kw):
     """Roda o spring_layout com os parâmetros comuns e escala para a tela."""
-    p = nx.spring_layout(G, k=.18, iterations=300, seed=7, **kw)
-    return {k: (float(v[0]) * SC, float(v[1]) * SC) for k, v in p.items()}
+    p = nx.spring_layout(G, k=k, iterations=300, seed=7, **kw)
+    return {n: (float(v[0]) * SC, float(v[1]) * SC) for n, v in p.items()}
 
 
 def livre(G):
     """Layout geral baseado nas conexões."""
-    return _spring(G)
+    return _spring(G, K_LIVRE)
 
 
 def por_area(nos, G):
@@ -39,7 +43,7 @@ def por_area(nos, G):
         for i, k in enumerate(ids):
             ang = 2 * math.pi * i / len(ids)
             ini[k] = (cx + .55 * math.cos(ang), cy + .55 * math.sin(ang))
-    return _spring(G, pos=ini, fixed=list(ini))
+    return _spring(G, K_AREA, pos=ini, fixed=list(ini))
 
 
 def _contorno(ref):
