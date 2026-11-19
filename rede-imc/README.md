@@ -7,7 +7,7 @@ Visualização interativa da rede de colaboração dos pesquisadores do IMC (Ins
 
 ```
 .
-├── backend/    API (FastAPI) e dados
+├── backend/    API (FastAPI), dados e mineração (backend/mineracao)
 └── frontend/   Interface (Vite + TypeScript)
 ```
 
@@ -22,9 +22,16 @@ Visualização interativa da rede de colaboração dos pesquisadores do IMC (Ins
 
 São dois processos: o backend na porta **8000** e o frontend na porta **5173**. Use dois terminais.
 
-### 1. Colocar os dados
+### 1. Gerar os dados (mineração)
 
-Copie os 4 CSVs para `backend/data/raw/` (crie a pasta se não existir):
+A mineração fica em `backend/mineracao/` e usa o mesmo `.venv` do backend (veja o passo 2 para criá-lo).
+Coloque o ZIP dos currículos em `backend/mineracao/dados/brutos/Professores_v8.zip` e rode, de dentro de `backend/`:
+
+```bash
+python mineracao/main.py
+```
+
+Leva cerca de 70 s e grava os 4 CSVs direto em `backend/data/raw/`:
 
 ```
 backend/data/raw/
