@@ -22,7 +22,7 @@ dados/brutos/Professores_v8.zip  ──►  python mineracao/main.py  ──► 
 | Currículos lidos | 521 |
 | Registros extraídos | 97.223 |
 | Atividades únicas (após juntar repetições) | 84.257 |
-| Relações na rede do IMC | 3.280 |
+| Relações na rede do IMC | 3.017 |
 
 ---
 
@@ -42,11 +42,13 @@ A saída mostra o andamento:
 ```
 [1/6] Lendo índices, pastas e cabeçalhos dos currículos...
 [2/6] Extraindo as cinco dimensões de cada currículo...
-[3/6] Conferindo externos que podem ser professores...
+[3/6] Conferindo externos que podem ser professores ou que têm dois ids...
+   1519 externos citados só pelo nome passaram a usar o id do Lattes
+   aviso: ... (nomes de dois Lattes e Lattes suspeitos, para revisão)
 [4/6] Juntando registros repetidos em atividades únicas...
 [5/6] Montando os pares e os vetores da camada...
 [6/6] Gravando os 4 CSVs...
-Pronto: 97223 registros, 84257 atividades únicas, 3280 relações. CSVs em .../backend/data/raw
+Pronto: 97223 registros, 84257 atividades únicas, 3017 relações. CSVs em .../backend/data/raw
 ```
 
 ### Opções
@@ -91,9 +93,9 @@ e listas no formato JSON. **O backend depende desses nomes e colunas.**
 | Arquivo | Uma linha por | Linhas |
 |---|---|---|
 | `dataset_completo_UNIFEI.csv` | docente da UNIFEI | 549 |
-| `dataset_entrada_IMC.csv` | pesquisador da rede do IMC | 1.541 |
-| `dataset_saida_IMC.csv` | relação (dupla de pesquisadores) | 3.280 |
-| `dataset_atividades_IMC.csv` | atividade única | 58.665 |
+| `dataset_entrada_IMC.csv` | pesquisador da rede do IMC | 1.325 |
+| `dataset_saida_IMC.csv` | relação (dupla de pesquisadores) | 3.017 |
+| `dataset_atividades_IMC.csv` | atividade única | 58.597 |
 
 **`dataset_completo_UNIFEI.csv`**: cadastro dos docentes: `pesquisador_id`, `nome`, `instituto`, `area`, `ciape`, `lattes_url`.
 
@@ -127,9 +129,9 @@ Os códigos de atividade (`ART-000001`, `PRJ-000001`...) são o `id_atividade` d
 |---|---|---|
 | 1 | Lê os índices `.txt`, as pastas e o cabeçalho de cada currículo. Cada professor ganha um id (SIAPE) | `professores.py`, `indices.py` |
 | 2 | Percorre o HTML e extrai os itens das 5 dimensões | `curriculos.py`, `dimensoes.py` |
-| 3 | Descobre quem é cada nome citado e corrige externos que na verdade são professores | `identificacao.py`, `externos.py` |
+| 3 | Descobre quem é cada nome citado, corrige externos que na verdade são professores e junta o externo que ganhou dois ids | `identificacao.py`, `externos.py` |
 | 4 | Junta o mesmo item registrado no currículo de cada coautor em uma atividade única | `deduplicacao.py`, `evidencias.py`, `consolidacao.py` |
-| 5 | Monta as duplas, numera as atividades e calcula os vetores | `rede.py` |
+| 5 | Monta as duplas (só com o que conta como colaboração), numera as atividades e calcula os vetores | `rede.py` |
 | 6 | Grava os 4 CSVs | `csvs.py` |
 
 Funções de texto usadas por várias etapas ficam em `src/textos.py`. Todas as constantes (caminhos,
@@ -148,6 +150,32 @@ Do mais confiável para o menos confiável:
 
 Nomes que não passam em nenhum nível (como `MELO, D. S.` sem link) **ficam fora da rede**, de
 propósito, para não criar relações falsas. Eles aparecem na coluna `nomes_nao_resolvidos`.
+
+**Externo com dois ids.** A mesma pessoa pode virar `EXT-L` num currículo (com link) e `EXT-N` em
+outro (só o nome). No fim da etapa 3, o `EXT-N` passa a usar o id do `EXT-L` quando o seu nome
+completo (sem acento, maiúsculas/minúsculas e espaços ignorados) pertence a um único `EXT-L`.
+Não juntam, e aparecem como `aviso:` na saída para revisão:
+
+- nome que pertence a dois `EXT-L` diferentes (podem ser pessoas diferentes);
+- `EXT-L` suspeito: dois nomes completos dele sem nenhuma palavra em comum (link do Lattes errado
+  no currículo, repetido em vários coautores). Esse Lattes fica fora da comparação.
+
+Nome abreviado nunca junta.
+
+## O que conta como colaboração
+
+Uma dupla só soma uma atividade quando os dois colaboraram nela (`colaboracao_valida`, em
+`rede.py`). Os papéis ficam em `configuracao.py`.
+
+| Dimensão | Conta | Não conta |
+|---|---|---|
+| Orientação | os dois supervisionaram juntos (orientador, coorientador, orientador não especificado) | orientador com o aluno (`orientando`) |
+| Banca | os dois eram membros | qualquer pessoa com papel que contenha `candidato` (inclusive `candidato/membro`) |
+| Artigo, projeto, produção técnica | todos os participantes | — |
+
+Por isso nenhuma relação sai com o vetor todo zero, e quem só aparecia como aluno (orientando ou
+candidato) fica fora da rede. Os docentes do IMC continuam todos no `dataset_entrada`, mesmo sem
+relação (com a observação "sem relação identificada").
 
 ---
 

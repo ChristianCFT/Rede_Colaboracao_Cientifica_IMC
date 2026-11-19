@@ -3,7 +3,8 @@
 Recebe as atividades únicas e os professores; devolve a rede (dicionário descrito abaixo) com
 as atividades do dataset já numeradas (ART-000001, PRJ-000001, ...).
 """
-from configuracao import CAMADA, DIMENSOES
+from configuracao import (CAMADA, DIMENSOES, PALAVRA_DE_CANDIDATO, PAPEIS_DE_SUPERVISAO,
+                          PAPEL_DE_MEMBRO_DE_BANCA, PAPEL_DE_ORIENTANDO)
 from src.textos import normalizar
 
 # A rede é um dicionário com as chaves:
@@ -46,6 +47,8 @@ def montar_pares(atividades, membros):
     """Devolve os pares: cada professor da camada com cada outro participante identificado."""
     # Pares camada-camada aparecem nos dois sentidos (com o mesmo vetor); camada-outros e
     # camada-externo, uma vez. Nunca há auto-relação nem par com participante não identificado.
+    # Um par só existe se tiver ao menos uma atividade que conta como colaboração
+    # (colaboracao_valida): por isso nenhum par sai com o vetor todo zero.
     pares = {}
     for atividade in atividades:
         pessoas = list(atividade['participantes'])
@@ -58,11 +61,40 @@ def montar_pares(atividades, membros):
 def acrescentar_parceiros(pares, pessoa, pessoas, atividade):
     """Acrescenta a atividade ao par (pessoa, parceiro) de cada outro participante."""
     for parceiro in pessoas:
-        if parceiro == pessoa:
+        if parceiro == pessoa or not colaboracao_valida(atividade, pessoa, parceiro):
             continue
         if (pessoa, parceiro) not in pares:
             pares[(pessoa, parceiro)] = {dim: [] for dim in DIMENSOES}
         pares[(pessoa, parceiro)][atividade['dim']].append(atividade)
+
+
+def colaboracao_valida(atividade, pessoa, parceiro):
+    """A atividade conta como colaboração entre os dois? Orientação e banca dependem do papel."""
+    papeis_pessoa = atividade['participantes'][pessoa]['papeis']
+    papeis_parceiro = atividade['participantes'][parceiro]['papeis']
+    if atividade['dim'] == 'ORI':
+        return supervisor(papeis_pessoa) and supervisor(papeis_parceiro)
+    if atividade['dim'] == 'BAN':
+        return avaliador(papeis_pessoa) and avaliador(papeis_parceiro)
+    return True
+
+
+def supervisor(papeis):
+    """Orientação: é orientador ou coorientador e não é o aluno (orientando)."""
+    # Maria orienta o aluno João: não liga. Maria e Pedro orientam juntos o mesmo aluno: liga.
+    if PAPEL_DE_ORIENTANDO in papeis:
+        return False
+    return len(papeis & PAPEIS_DE_SUPERVISAO) > 0
+
+
+def avaliador(papeis):
+    """Banca: é membro e nenhum papel tem 'candidato' (quem estava sendo avaliado não conta)."""
+    # 'candidato/membro' acontece quando registros unificados deram papéis diferentes à mesma
+    # pessoa: vale o de candidato.
+    for papel in papeis:
+        if PALAVRA_DE_CANDIDATO in papel:
+            return False
+    return PAPEL_DE_MEMBRO_DE_BANCA in papeis
 
 
 def numerar_atividades(atividades, rede):

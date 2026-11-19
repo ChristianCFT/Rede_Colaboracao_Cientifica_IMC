@@ -35,6 +35,15 @@ COLUNA_DA_DIMENSAO = {
     'PTT': 'produção técnico-tecnológica',
 }
 
+# ---------------------------------------------------------------- papéis que contam como colaboração
+# Orientação: só liga quem supervisionou junto. O aluno (orientando) não é colaborador.
+PAPEIS_DE_SUPERVISAO = {'orientador', 'coorientador', 'orientador (não especificado)'}
+PAPEL_DE_ORIENTANDO = 'orientando'
+# Banca: só liga quem avaliou junto. Papel com 'candidato' (até 'candidato/membro') é de quem
+# estava sendo avaliado.
+PAPEL_DE_MEMBRO_DE_BANCA = 'membro'
+PALAVRA_DE_CANDIDATO = 'candidato'
+
 # ---------------------------------------------------------------- institutos
 # Primeira palavra do nome da pasta do instituto -> sigla oficial (SIGAA UNIFEI).
 SIGLA_POR_PASTA = {

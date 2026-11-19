@@ -1,10 +1,11 @@
-"""Etapa 3 (fim): externos que na verdade são professores da UNIFEI.
+"""Etapa 3 (fim): externos que na verdade são professores e externos com dois ids.
 
 Recebe os itens, os professores e o índice com os externos criados na leitura; corrige os
-participantes dos itens no lugar (não devolve nada).
+participantes dos itens no lugar.
 """
 import re
 
+from src.identificacao import esta_abreviado
 from src.textos import PARTICULAS, forma_natural, normalizar, normalizar_sem_particulas
 
 SUFIXOS_DE_NOME = {'JUNIOR', 'JR', 'FILHO', 'NETO', 'SOBRINHO'}
@@ -37,12 +38,17 @@ def aplicar_trocas(item, trocas, suspeitos):
             item['nao_resolvidos'].append(nao_resolvido)
         else:
             novos.append(participante)
+    item['participantes'] = sem_repetidos(novos)
+
+
+def sem_repetidos(participantes):
+    """Deixa cada pessoa uma vez só no item (vale a primeira vez que ela aparece)."""
     unicos, vistos = [], set()
-    for participante in novos:
+    for participante in participantes:
         if participante['id'] not in vistos:
             vistos.add(participante['id'])
             unicos.append(participante)
-    item['participantes'] = unicos
+    return unicos
 
 
 def encontrar_trocas(professores, externos):
@@ -190,3 +196,77 @@ def inicial_bate(inicial, palavra):
     if len(inicial) > 1:
         return palavra == inicial
     return palavra[0] == inicial
+
+
+# ------------------------------------------------------------------- mesmo externo com dois ids
+def unificar_externos_por_nome(itens, indice):
+    """Troca cada EXT-N pelo EXT-L da mesma pessoa; devolve (quantos juntou, avisos)."""
+    # A mesma pessoa vira EXT-L num currículo (com link do Lattes) e EXT-N em outro (só o nome).
+    # O Lattes é a identificação mais confiável: se o nome completo do EXT-N pertence a um único
+    # EXT-L, o EXT-N passa a ser o EXT-L. Nome de dois EXT-L não junta. Lattes suspeito fica
+    # fora da comparação. Os dois casos viram aviso para revisão. Nome abreviado nunca junta.
+    externos = indice['externos']
+    em_uso = sorted(ids_dos_participantes(itens))
+    lattes_por_nome, avisos = {}, []
+    for identificador in em_uso:
+        if identificador.startswith('EXT-L'):
+            nomes = nomes_completos(externos[identificador])
+            if lattes_suspeito(nomes):
+                exemplos = ', '.join(sorted(nomes)[:3])
+                avisos.append(f'Lattes {identificador} ligado a pessoas diferentes ({exemplos}...); '
+                              'fora da junção por nome')
+                continue
+            for nome in nomes:
+                lattes_por_nome.setdefault(nome, set()).add(identificador)
+    trocas = {}
+    for identificador in em_uso:
+        if not identificador.startswith('EXT-N'):
+            continue
+        alvos = set()
+        for nome in nomes_completos(externos[identificador]):
+            alvos |= lattes_por_nome.get(nome, set())
+        if len(alvos) == 1:
+            trocas[identificador] = min(alvos)
+        elif len(alvos) > 1:
+            nome = externos[identificador]['nomes'].most_common(1)[0][0]
+            avisos.append(f"{nome} ({identificador}): mais de um Lattes com esse nome "
+                          f"({', '.join(sorted(alvos))}); não juntado")
+    for identificador, lattes in trocas.items():
+        externos[lattes]['nomes'].update(externos.pop(identificador)['nomes'])
+    for item in itens:
+        for participante in item['participantes']:
+            participante['id'] = trocas.get(participante['id'], participante['id'])
+        item['participantes'] = sem_repetidos(item['participantes'])
+    return len(trocas), sorted(avisos)
+
+
+def ids_dos_participantes(itens):
+    """Devolve o conjunto de ids que aparecem nos itens."""
+    ids = set()
+    for item in itens:
+        for participante in item['participantes']:
+            ids.add(participante['id'])
+    return ids
+
+
+def nomes_completos(externo):
+    """Devolve os nomes completos (sem abreviação) já vistos do externo, na ordem natural."""
+    nomes = set()
+    for nome in externo['nomes']:
+        if not esta_abreviado(nome) and normalizar(forma_natural(nome)):
+            nomes.add(normalizar(forma_natural(nome)))
+    return nomes
+
+
+def lattes_suspeito(nomes):
+    """Dois nomes completos do mesmo Lattes sem nenhuma palavra em comum: são pessoas diferentes."""
+    # Acontece quando o link do Lattes de um item está errado (o mesmo link em vários coautores).
+    # Variações da mesma pessoa sempre dividem alguma palavra ('TIAGO FILHO', 'GERALDO TIAGO FILHO').
+    palavras = []
+    for nome in sorted(nomes):
+        palavras.append(set(nome.split()) - PARTICULAS)
+    for i in range(len(palavras)):
+        for j in range(i + 1, len(palavras)):
+            if not palavras[i] & palavras[j]:
+                return True
+    return False

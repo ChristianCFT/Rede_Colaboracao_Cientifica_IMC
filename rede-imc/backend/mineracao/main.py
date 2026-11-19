@@ -26,8 +26,12 @@ def main():
     indice = identificacao.montar_indice(lista_professores, identificacao.ler_correspondencias())
     itens = curriculos.extrair_itens(lista_professores, indice)
 
-    print('[3/6] Conferindo externos que podem ser professores...')
+    print('[3/6] Conferindo externos que podem ser professores ou que têm dois ids...')
     externos.corrigir_externos(itens, lista_professores, indice)
+    juntados, avisos = externos.unificar_externos_por_nome(itens, indice)
+    print(f'   {juntados} externos citados só pelo nome passaram a usar o id do Lattes')
+    for aviso in avisos:
+        print(f'   aviso: {aviso}')
 
     print('[4/6] Juntando registros repetidos em atividades únicas...')
     atividades = deduplicacao.deduplicar(itens)
