@@ -6,8 +6,9 @@ participantes identificados e nomes não resolvidos.
 import re
 
 from configuracao import SECAO_PROJETOS, TAMANHO_MAXIMO_DO_TEXTO
-from src.identificacao import professor_ou_externo_por_lattes, resolver_nome
-from src.textos import limpar_espacos
+from src.externos import SUFIXOS_DE_NOME, compativel_com_abreviacao, separar_sobrenome_e_iniciais
+from src.identificacao import citacao_especifica, professor_ou_externo_por_lattes, resolver_nome
+from src.textos import forma_natural, limpar_espacos, normalizar_sem_particulas
 
 # Cada item é um dicionário com as chaves:
 #   dim, subtipo, fonte ('dono|subtipo|item n'), dono (id do dono do CV), doi, texto
@@ -17,6 +18,8 @@ from src.textos import limpar_espacos
 
 # Captura um ano entre 1900 e 2099 que não esteja grudado em outros dígitos.
 ANO = re.compile(r'(?<!\d)((?:19|20)\d{2})(?!\d)')
+# Captura o ano no padrão do Lattes: entre pontos, logo depois do título ('Título. 2016. Local').
+ANO_DO_LATTES = re.compile(r'\.\s((?:19|20)\d{2})\.(?:\s|$)')
 # Captura o ponto que separa a lista de autores do título ('SILVA, J. . Título').
 FIM_DOS_AUTORES = re.compile(r'\s\.\s|\.\.\s|\.\s\.\s|\s\.$')
 # Captura 'SOBRENOME, Iniciais. Resto' quando o primeiro autor vem colado no título.
@@ -38,10 +41,12 @@ INICIO_DO_CANDIDATO = re.compile(r'Participação em banca de\s+')
 PAPEL_NA_ORIENTACAO = re.compile(r'(Co-?orientador|Orientador)\s*:\s*([^.]+)', re.I)
 # Captura os 16 dígitos do Lattes iD no link do aluno.
 DIGITOS_DO_LATTES = re.compile(r'(\d{16})')
-# Capturam a situação e os integrantes de um projeto de pesquisa.
+# Capturam a situação e os integrantes de um projeto de pesquisa. A lista de integrantes para
+# antes de 'Financiador(es)' ou 'Número de produções', com ou sem quebra de linha antes deles
+# ('... - Integrante.Financiador(es): ...').
 SITUACAO = re.compile(r'Situação:\s*([^;\n]+)')
 INTEGRANTES = re.compile(
-    r'Integrantes:\s*(.+?)(?:\.\s*\n|\.\s*$|\n\s*Financiador|\n\s*Número)', re.S)
+    r'Integrantes:\s*(.+?)(?:\.\s*\n|\.\s*$|\.?\s*Financiador|\.?\s*Número)', re.S)
 # Captura o período no começo da célula de um projeto ('2019 - Atual').
 INICIO_DO_PERIODO = re.compile(r'^\d{4}')
 # Captura tudo que não é letra (com acento) nem dígito, na palavra antes de um ponto.
@@ -105,13 +110,49 @@ def extrair_banca(item, texto, links, professor, chaves_dono, indice):
         membros, resto = separar_autores(texto)
     item['titulo'], item['ano'] = separar_titulo_e_ano(resto)
     item['candidato'] = candidato
-    resolver_nomes(item, membros, 'membro', links, professor, chaves_dono, indice)
+    resolver_membros_da_banca(item, membros, candidato, links, professor, chaves_dono, indice)
     if not candidato:
         return
     # O candidato só entra com link Lattes ou sendo professor cadastrado, nunca por nome solto.
     pessoa, metodo = resolver_nome(candidato, links, None, set(), indice, exigir_lattes=True)
     if pessoa and pessoa != professor['id']:
         adicionar_participante(item, pessoa, 'candidato', metodo, candidato)
+
+
+def resolver_membros_da_banca(item, membros, candidato, links, professor, chaves_dono, indice):
+    """Como resolver_nomes, mas o aluno escrito na lista de membros entra como candidato."""
+    # Alguns currículos listam o próprio aluno entre os membros ('...; FRANCISCO, C. S. L.
+    # Participação em banca de Christopher de Souza Lima Francisco'): sem isso, o aluno viraria
+    # avaliador e ganharia relação com a banca. O dono do currículo registrou a banca como
+    # avaliador, então nunca é o candidato.
+    for membro in membros:
+        pessoa, metodo = resolver_nome(membro, links, professor['id'], chaves_dono, indice,
+                                       lattes_dono=professor['lattes'])
+        papel = 'membro'
+        if pessoa != professor['id'] and eh_o_candidato(membro, candidato):
+            papel = 'candidato'
+        if pessoa:
+            adicionar_participante(item, pessoa, papel, metodo, membro)
+        else:
+            adicionar_nao_resolvido(item, membro, metodo)
+
+
+def eh_o_candidato(membro, candidato):
+    """O nome na lista de membros é o próprio candidato ('FRANCISCO, C. S. L' = 'Christopher ... Francisco')?"""
+    if not candidato:
+        return False
+    palavras = normalizar_sem_particulas(candidato).split()
+    if normalizar_sem_particulas(forma_natural(membro)).split() == palavras:
+        return True
+    # Citação: precisa ser específica ('SILVA, B' não basta), o sobrenome dela tem que ser o último
+    # do aluno ('Souza, L. E' não é 'Luigi de Souza Esquaella') e as iniciais têm que bater na ordem.
+    sobrenomes, _ = separar_sobrenome_e_iniciais(membro)
+    sem_sufixo = [palavra for palavra in palavras if palavra not in SUFIXOS_DE_NOME]
+    if not citacao_especifica(membro) or not sobrenomes or not sem_sufixo:
+        return False
+    if sobrenomes[-1] != sem_sufixo[-1]:
+        return False
+    return compativel_com_abreviacao(membro, palavras)
 
 
 def extrair_orientacao(item, elemento, texto, professor, indice):
@@ -277,7 +318,17 @@ def separar_autores_sem_ponto(texto):
 
 def separar_titulo_e_ano(resto):
     """Recebe 'Título. 2023. (Tipo).' e devolve (título, ano)."""
-    # O título vai até o primeiro ano que vem logo depois de um ponto ou de uma vírgula.
+    titulo, ano = titulo_e_ano_pela_pontuacao(resto)
+    # Números no meio do título ('Portaria no. 2074', 'Fleutiaux, 1920', 'NBR 8800') enganam a
+    # regra da pontuação: quando o ano no padrão do Lattes é outro, vale o do Lattes.
+    achado = ANO_DO_LATTES.search(resto)
+    if achado and achado.group(1) != ano and len(resto[:achado.start()].strip(' .,')) > 3:
+        return resto[:achado.start()].rstrip(' .,'), achado.group(1)
+    return titulo, ano
+
+
+def titulo_e_ano_pela_pontuacao(resto):
+    """O título vai até o primeiro ano que vem logo depois de um ponto ou de uma vírgula."""
     for achado in ANO.finditer(resto):
         antes = resto[:achado.start()].rstrip()
         if antes.endswith(('.', ',')) and len(antes) > 3:

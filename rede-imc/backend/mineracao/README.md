@@ -21,8 +21,8 @@ dados/brutos/Professores_v8.zip  ──►  python mineracao/main.py  ──► 
 |---|---|
 | Currículos lidos | 521 |
 | Registros extraídos | 97.223 |
-| Atividades únicas (após juntar repetições) | 84.257 |
-| Relações na rede do IMC | 3.017 |
+| Atividades únicas (após juntar repetições) | 83.671 |
+| Relações na rede do IMC | 2.990 |
 
 ---
 
@@ -43,12 +43,14 @@ A saída mostra o andamento:
 [1/6] Lendo índices, pastas e cabeçalhos dos currículos...
 [2/6] Extraindo as cinco dimensões de cada currículo...
 [3/6] Conferindo externos que podem ser professores ou que têm dois ids...
-   1519 externos citados só pelo nome passaram a usar o id do Lattes
+   1551 externos citados só pelo nome passaram a usar o id do Lattes
    aviso: ... (nomes de dois Lattes e Lattes suspeitos, para revisão)
+   115 externos com o nome do meio faltando foram juntados ao nome completo
+   aviso: ... (nome que cabe em dois nomes e dois Lattes com nomes parecidos)
 [4/6] Juntando registros repetidos em atividades únicas...
 [5/6] Montando os pares e os vetores da camada...
 [6/6] Gravando os 4 CSVs...
-Pronto: 97223 registros, 84257 atividades únicas, 3017 relações. CSVs em .../backend/data/raw
+Pronto: 97223 registros, 83671 atividades únicas, 2990 relações. CSVs em .../backend/data/raw
 ```
 
 ### Opções
@@ -93,9 +95,9 @@ e listas no formato JSON. **O backend depende desses nomes e colunas.**
 | Arquivo | Uma linha por | Linhas |
 |---|---|---|
 | `dataset_completo_UNIFEI.csv` | docente da UNIFEI | 549 |
-| `dataset_entrada_IMC.csv` | pesquisador da rede do IMC | 1.325 |
-| `dataset_saida_IMC.csv` | relação (dupla de pesquisadores) | 3.017 |
-| `dataset_atividades_IMC.csv` | atividade única | 58.597 |
+| `dataset_entrada_IMC.csv` | pesquisador da rede do IMC | 1.311 |
+| `dataset_saida_IMC.csv` | relação (dupla de pesquisadores) | 2.990 |
+| `dataset_atividades_IMC.csv` | atividade única | 57.609 |
 
 **`dataset_completo_UNIFEI.csv`**: cadastro dos docentes: `pesquisador_id`, `nome`, `instituto`, `area`, `ciape`, `lattes_url`.
 
@@ -151,9 +153,15 @@ Do mais confiável para o menos confiável:
 Nomes que não passam em nenhum nível (como `MELO, D. S.` sem link) **ficam fora da rede**, de
 propósito, para não criar relações falsas. Eles aparecem na coluna `nomes_nao_resolvidos`.
 
+Texto com palavra de instituição (`UNIVERSIDADE`, `INSTITUTO`, `FACULDADE`… lista
+`PALAVRAS_DE_INSTITUICAO` no `configuracao.py`) não é pessoa: endereços e afiliações lidos como
+autor são descartados e não entram nem em `nomes_nao_resolvidos`.
+
 **Externo com dois ids.** A mesma pessoa pode virar `EXT-L` num currículo (com link) e `EXT-N` em
 outro (só o nome). No fim da etapa 3, o `EXT-N` passa a usar o id do `EXT-L` quando o seu nome
-completo (sem acento, maiúsculas/minúsculas e espaços ignorados) pertence a um único `EXT-L`.
+completo (sem acento, maiúsculas/minúsculas, espaços e partículas como "de" e "da" ignorados)
+pertence a um único `EXT-L`. Essa é a única junção de externos por nome: as etapas seguintes não
+trocam ids.
 Não juntam, e aparecem como `aviso:` na saída para revisão:
 
 - nome que pertence a dois `EXT-L` diferentes (podem ser pessoas diferentes);
@@ -161,6 +169,23 @@ Não juntam, e aparecem como `aviso:` na saída para revisão:
   no currículo, repetido em vários coautores). Esse Lattes fica fora da comparação.
 
 Nome abreviado nunca junta.
+
+**Externo com o nome do meio faltando.** Depois disso, dois externos viram a mesma pessoa quando
+têm o mesmo primeiro e último nome, todas as palavras do nome mais curto estão no mais longo
+(`Jorge Sotomayor Tello` e `Jorge Manuel Sotomayor Tello`), nenhum dos dois está abreviado e eles
+têm pelo menos um coautor em comum (`COAUTORES_EM_COMUM_PARA_JUNTAR`), sem nunca aparecerem juntos
+no mesmo item. Fica o id do Lattes, quando houver. Não juntam, e viram `aviso:`, o nome curto que
+cabe em dois nomes longos e dois `EXT-L` (dois Lattes são duas pessoas).
+
+**Banca registrada por vários membros (etapa 4).** Cada membro registra a mesma banca no próprio
+currículo, às vezes com o nome do aluno escrito de outro jeito. Viram uma banca só quando têm o
+mesmo candidato (sem partículas, `Jr` = `Junior`), ano e tipo; ou, com o nome do aluno diferente
+(`Rezende` e `Resende`), o mesmo ano e tipo, nomes com pelo menos 2 palavras em comum
+(`PALAVRAS_EM_COMUM_DO_CANDIDATO`), o dono de um registro identificado no outro e título com
+semelhança de pelo menos 0,8 (`SIMILARIDADE_BANCA_CANDIDATO_DIFERENTE`).
+
+**Ano.** Vale o ano no padrão do Lattes, entre pontos logo depois do título (`Título. 2016.`),
+quando ele difere do primeiro ano encontrado no texto (`Portaria no. 2074` não é ano).
 
 ## O que conta como colaboração
 
@@ -172,6 +197,12 @@ Uma dupla só soma uma atividade quando os dois colaboraram nela (`colaboracao_v
 | Orientação | os dois supervisionaram juntos (orientador, coorientador, orientador não especificado) | orientador com o aluno (`orientando`) |
 | Banca | os dois eram membros | qualquer pessoa com papel que contenha `candidato` (inclusive `candidato/membro`) |
 | Artigo, projeto, produção técnica | todos os participantes | — |
+
+Alguns currículos escrevem o próprio aluno na lista de membros da banca (`...; FRANCISCO, C. S. L.
+Participação em banca de Christopher de Souza Lima Francisco`). Esse nome entra como `candidato`
+quando é igual ao do aluno ou quando é uma citação específica com o último sobrenome e as
+iniciais do aluno (`eh_o_candidato`, em `dimensoes.py`). Citação genérica (`SILVA, B`) e o dono
+do currículo nunca viram candidato.
 
 Por isso nenhuma relação sai com o vetor todo zero, e quem só aparecia como aluno (orientando ou
 candidato) fica fora da rede. Os docentes do IMC continuam todos no `dataset_entrada`, mesmo sem

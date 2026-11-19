@@ -6,14 +6,16 @@ consolidacao.py), cada uma com todos os seus participantes e fontes.
 import re
 
 from configuracao import (ANO_ATUAL_DOS_PROJETOS, MIN_PALAVRAS_TITULO_IDENTICO,
-                          MIN_PALAVRAS_TITULO_SEMELHANTE, PREFIXO_DO_TITULO,
+                          MIN_PALAVRAS_TITULO_SEMELHANTE, PALAVRAS_EM_COMUM_DO_CANDIDATO,
+                          PREFIXO_DO_TITULO, SIMILARIDADE_BANCA_CANDIDATO_DIFERENTE,
                           SIMILARIDADE_BANCA_ENTRE_CVS, SIMILARIDADE_BANCA_MESMO_CV,
                           SIMILARIDADE_ORIENTACAO_ENTRE_CVS, SIMILARIDADE_ORIENTACAO_MESMO_CV,
                           TITULO_QUASE_IDENTICO)
 from src.consolidacao import consolidar
 from src.evidencias import (dois_diferentes, evidencia_de_participantes, ligados, membros,
                             numeros_do_titulo, semelhanca, semelhanca_ou_vazio)
-from src.textos import normalizar, normalizar_doi
+from src.identificacao import chave_citacao
+from src.textos import normalizar, normalizar_doi, normalizar_sem_particulas
 
 # Captura anos e a palavra 'Atual' no período de um projeto ('2019 - Atual').
 ANOS_DO_PERIODO = re.compile(r'(\d{4}|Atual)')
@@ -243,11 +245,15 @@ def juntar_bancas(itens, pai):
             comparar_pares(grupo, pai, mesma_banca_de_trabalho)
         else:
             comparar_pares(grupo, pai, mesma_comissao)
+    # Depois, o mesmo trabalho com o nome do candidato escrito diferente em cada CV.
+    for grupo in agrupar(itens, chave_primeiro_nome_ano_e_tipo).values():
+        comparar_pares(grupo, pai, mesma_banca_com_candidato_diferente)
 
 
 def chave_da_banca(item):
     """Trabalho com candidato de 2+ palavras: 'C|candidato|ano|tipo'; senão 'T|título|ano|tipo'."""
-    candidato = normalizar(item['candidato'])
+    # Chave de citação: sem partículas e com 'JR' = 'JUNIOR' ('Joel Faria Jr' = 'Joel Faria Junior').
+    candidato = chave_citacao(item['candidato'])
     if item['subtipo'].startswith('Trabalho') and len(candidato.split()) >= 2:
         return 'C|' + candidato + '|' + item['ano'] + '|' + item['subtipo']
     if not item['titulo_normalizado']:
@@ -268,3 +274,29 @@ def mesma_comissao(a, b):
     if a['dono'] == b['dono']:
         return membros(a) == membros(b)
     return ligados(a, b)
+
+
+def chave_primeiro_nome_ano_e_tipo(item):
+    """Trabalho de conclusão: primeiro nome do candidato + ano + tipo (sem candidato, sem chave)."""
+    nome = normalizar(item['candidato']).split()
+    if not item['subtipo'].startswith('Trabalho') or not nome:
+        return None
+    return nome[0] + '|' + item['ano'] + '|' + item['subtipo']
+
+
+def mesma_banca_com_candidato_diferente(a, b):
+    """CVs diferentes, um dono aparece no outro, candidatos parecidos e título bem parecido."""
+    # Pega erros de digitação e abreviações no nome do aluno ('Rezende' x 'Resende',
+    # 'Mariana de F. Matos' x 'Mariana de Freitas Matos'), que mudam a chave do candidato.
+    if a['dono'] == b['dono'] or not a['titulo_normalizado'] or not b['titulo_normalizado']:
+        return False
+    if len(palavras_do_nome(a['candidato']) & palavras_do_nome(b['candidato'])) < PALAVRAS_EM_COMUM_DO_CANDIDATO:
+        return False
+    if not ligados(a, b):
+        return False
+    return semelhanca(a['titulo_normalizado'], b['titulo_normalizado']) >= SIMILARIDADE_BANCA_CANDIDATO_DIFERENTE
+
+
+def palavras_do_nome(nome):
+    """Recebe um nome e devolve o conjunto das suas palavras, sem acento e sem partículas."""
+    return set(normalizar_sem_particulas(nome).split())

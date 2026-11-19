@@ -47,8 +47,7 @@ const parseYear = (s: string | undefined): number => {
 };
 
 const toNode = (n: NodeDTO, i: number, extended: boolean): GNode => ({
-  i, id: n.id, name: n.label, inst: n.instituto, area: n.area, lat: n.lattes_url, obs: n.observacao, deg: n.grau,
-  prod: n.producao ? [n.producao.art, n.producao.prj, n.producao.ori, n.producao.ban, n.producao.ptt] : null,
+  i, id: n.id, name: n.label, inst: n.instituto, area: n.area, lat: n.lattes_url, deg: n.grau,
   grp: n.grupo, comp: n.comp, mat: n.mat, extended, x: n.x, y: n.y,
   lay: { free: [n.x, n.y] as Pt, area: [n.x_area, n.y_area] as Pt }, adj: [], ax: n.x, ay: n.y,
 });

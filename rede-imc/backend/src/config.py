@@ -8,7 +8,7 @@ FILES = dict(saida='dataset_saida_IMC.csv', entrada='dataset_entrada_IMC.csv',
              unifei='dataset_completo_UNIFEI.csv', atividades='dataset_atividades_IMC.csv')
 
 # Colunas lidas de dataset_atividades_IMC (o arquivo tem outras que a aplicação não usa).
-COLUNAS_ATIVIDADES = ['id_atividade', 'dimensao', 'ano', 'titulo', 'ids_participantes']
+COLUNAS_ATIVIDADES = ['id_atividade', 'ano', 'titulo']
 
 DIMS = ['art', 'prj', 'ori', 'ban', 'ptt']  # ordem do vetor contagem
 DIMN = ['Artigos', 'Projetos', 'Orientações', 'Bancas', 'Prod. téc.']

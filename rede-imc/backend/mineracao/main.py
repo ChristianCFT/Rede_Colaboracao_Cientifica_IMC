@@ -32,6 +32,10 @@ def main():
     print(f'   {juntados} externos citados só pelo nome passaram a usar o id do Lattes')
     for aviso in avisos:
         print(f'   aviso: {aviso}')
+    juntados, avisos = externos.unificar_nomes_do_meio(itens, indice)
+    print(f'   {juntados} externos com o nome do meio faltando foram juntados ao nome completo')
+    for aviso in avisos:
+        print(f'   aviso: {aviso}')
 
     print('[4/6] Juntando registros repetidos em atividades únicas...')
     atividades = deduplicacao.deduplicar(itens)

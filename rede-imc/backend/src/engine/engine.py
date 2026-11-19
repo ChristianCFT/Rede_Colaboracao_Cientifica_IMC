@@ -11,7 +11,7 @@ from functools import lru_cache
 from src.config import COR_GRUPO, DIMN, DIMS, PALETA
 from src.engine import layout, loaders, peso
 from src.schemas.graph_schema import (Atividade, AtividadeDetalhe, Edge, Graph, Node, NodeDetail, PesoParametros,
-                                      Producao, Vizinho)
+                                      Vizinho)
 
 
 class NodeNotFound(Exception):
@@ -32,7 +32,6 @@ class Universo:
         v, p, q = self.nos[k], self.pos_livre[k], self.pos_area[k]
         return Node(id=k, label=v['label'], instituto=v['instituto'], area=v['area'], grupo=v['grupo'],
                     comp=v['comp'], mat=v['mat'], grau=self.grau.get(k, 0), lattes_url=v['lattes'],
-                    observacao=v['obs'], producao=Producao(**v['prod']) if v['prod'] else None,
                     x=round(p[0], 1), y=round(p[1], 1), x_area=round(q[0], 1), y_area=round(q[1], 1))
 
     def com_atividades(self) -> dict:
@@ -100,8 +99,7 @@ def get_engine() -> Engine:
     G = loaders.grafo(nos, arestas)
     principal = Universo(nos, arestas, dict(G.degree()), layout.livre(nos, G), layout.por_area(nos, G))
 
-    part = loaders.participacoes(d['atividades'])
-    extra = loaders.sem_colaboracao(d['unifei'], nos, d['saida'], urls, part)
+    extra = loaders.sem_colaboracao(d['unifei'], nos, d['saida'], urls)
     sem_colab = Universo(extra, {}, {}, layout.anel(extra, principal.pos_livre), layout.anel(extra, principal.pos_area))
 
     acts = loaders.atividades(d['atividades'])

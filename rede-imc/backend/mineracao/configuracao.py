@@ -1,6 +1,7 @@
-"""Todas as constantes do projeto num lugar só: caminhos, camada, siglas, seções e limiares.
+"""Constantes das regras da mineração num lugar só: caminhos, camada, papéis, siglas, seções e limiares.
 
-Nenhum outro arquivo tem números ou nomes de seção soltos: para mudar uma regra fixa, mude aqui.
+Para mudar uma regra, mude aqui. Os padrões de texto (expressões regulares) ficam junto do código
+que os usa.
 """
 from pathlib import Path
 
@@ -43,6 +44,17 @@ PAPEL_DE_ORIENTANDO = 'orientando'
 # estava sendo avaliado.
 PAPEL_DE_MEMBRO_DE_BANCA = 'membro'
 PALAVRA_DE_CANDIDATO = 'candidato'
+
+# ---------------------------------------------------------------- nomes que não são pessoas
+# Palavras que mostram que um "nome" lido como autor ou integrante é uma instituição ou um
+# endereço ('UNIVERSIDADE FEDERAL DE ITAJUBÁ, 37500-903...'). Comparadas já sem acento.
+PALAVRAS_DE_INSTITUICAO = {'UNIVERSIDADE', 'UNIVERSITY', 'UNIVERSIDAD', 'INSTITUTO', 'INSTITUTE',
+                           'FACULDADE', 'DEPARTAMENTO', 'LABORATORIO', 'LTDA', 'FINANCIADORA'}
+
+# ---------------------------------------------------------------- externos com o nome do meio faltando
+# 'Jorge Sotomayor Tello' e 'Jorge Manuel Sotomayor Tello' só viram a mesma pessoa se tiverem pelo
+# menos este número de coautores em comum (evita juntar homônimos).
+COAUTORES_EM_COMUM_PARA_JUNTAR = 1
 
 # ---------------------------------------------------------------- institutos
 # Primeira palavra do nome da pasta do instituto -> sigla oficial (SIGAA UNIFEI).
@@ -94,6 +106,10 @@ SIMILARIDADE_ORIENTACAO_ENTRE_CVS = 0.6
 SIMILARIDADE_ORIENTACAO_MESMO_CV = 0.9
 SIMILARIDADE_BANCA_ENTRE_CVS = 0.5
 SIMILARIDADE_BANCA_MESMO_CV = 0.9
+# Banca com o nome do candidato escrito diferente em cada CV ('Joel Faria Jr' x 'Joel Faria
+# Junior', 'Rezende' x 'Resende'): junta com título bem parecido e nomes com 2+ palavras em comum.
+SIMILARIDADE_BANCA_CANDIDATO_DIFERENTE = 0.8
+PALAVRAS_EM_COMUM_DO_CANDIDATO = 2
 # Títulos com semelhança >= 0,92 são "quase idênticos" (artigos, produção técnica, projetos).
 TITULO_QUASE_IDENTICO = 0.92
 # Só se comparam registros cujos títulos começam pelos mesmos 40 caracteres normalizados.

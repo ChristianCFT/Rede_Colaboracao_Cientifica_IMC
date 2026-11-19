@@ -6,14 +6,6 @@ from pydantic import BaseModel, Field
 Grupo = Literal['Computação', 'Matemática', 'Ambas', 'Outras', 'Sem área', '']
 
 
-class Producao(BaseModel):
-    art: int
-    prj: int
-    ori: int
-    ban: int
-    ptt: int
-
-
 class Node(BaseModel):
     id: str
     label: str
@@ -24,8 +16,6 @@ class Node(BaseModel):
     mat: bool
     grau: int
     lattes_url: str
-    observacao: str
-    producao: Producao | None
     x: float              # layout livre
     y: float
     x_area: float         # layout separado por área

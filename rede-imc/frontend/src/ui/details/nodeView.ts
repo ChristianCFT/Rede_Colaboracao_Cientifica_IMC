@@ -1,5 +1,5 @@
 // Painel de um pesquisador: identificação, barras das 5 dimensões, Top 5 parceiros e conexões.
-// Vale para os dois universos; para quem não colabora com o IMC, mostra só o que existe na fonte.
+// Vale para os dois universos; quem não colabora com o IMC aparece sem barras nem parceiros.
 import { esc, fmt } from '../../core/dom';
 import { DIMN, DIM_LONG, E, GC, IX, N, col, dimCol } from '../../core/model';
 import { filters } from '../../core/state';
@@ -7,7 +7,7 @@ import { getView, nodeDims } from '../../core/selectors';
 import type { View } from '../../core/selectors';
 import { api } from '../../api/api';
 import type { NodeDetailDTO } from '../../api/api';
-import { bars, dot, personRow, vec } from './parts';
+import { bars, dot, personRow } from './parts';
 
 // Detalhe vindo de GET /nodes/{id}: define a ordem da lista completa de conexões.
 const detail = new Map<string, NodeDetailDTO>();
@@ -55,7 +55,6 @@ export function nodeView(i: number, rerender: () => void): string {
   <div class="li">${partners.length ? partners.slice(0, 5).map((p, k) =>
     personRow(k + 1, p.o, `<span class="go" data-e="${p.e}" title="Ver colaborações em comum">${fmt(p.w)} ›</span>`)).join('')
     : '<span class="mu">Nenhum com os filtros atuais.</span>'}</div>
-  <h2>Produção do pesquisador (vetor contagem)</h2>${n.prod ? vec(n.prod) : `<p class="mu">${esc(n.obs || 'Sem vetor de contagem na fonte.')}</p>`}
   <details class="all"${allOpen ? ' open' : ''}><summary>Todas as conexões (${fmt(partners.length)})</summary>
   <div class="li">${all || '<span class="mu">Nenhuma com os filtros atuais.</span>'}</div></details>`;
 }

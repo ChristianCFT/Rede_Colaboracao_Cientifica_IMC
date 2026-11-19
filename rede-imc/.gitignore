@@ -9,5 +9,4 @@ frontend/dist/
 
 # Mineração
 backend/mineracao/dados/temporarios/
-backend/mineracao/dados_gerados/
 

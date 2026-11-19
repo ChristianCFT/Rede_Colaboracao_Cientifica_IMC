@@ -3,10 +3,10 @@
 export type Pt = [number, number];
 
 export interface GNode {
-  i: number; id: string; name: string; inst: string; area: string; lat: string; obs: string;
+  i: number; id: string; name: string; inst: string; area: string; lat: string;
   /** Nº de parceiros no universo do pesquisador (grau vindo do backend). */
   deg: number;
-  prod: number[] | null; grp: string; comp: boolean; mat: boolean;
+  grp: string; comp: boolean; mat: boolean;
   /** true = pesquisador sem colaboração com o IMC (só vértice, sem relações); false = rede principal. */
   extended: boolean;
   x: number; y: number;

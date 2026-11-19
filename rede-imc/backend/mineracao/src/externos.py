@@ -1,10 +1,11 @@
-"""Etapa 3 (fim): externos que na verdade são professores e externos com dois ids.
+"""Etapa 3 (fim): externos que na verdade são professores, com dois ids ou com o nome do meio faltando.
 
 Recebe os itens, os professores e o índice com os externos criados na leitura; corrige os
 participantes dos itens no lugar.
 """
 import re
 
+from configuracao import COAUTORES_EM_COMUM_PARA_JUNTAR
 from src.identificacao import esta_abreviado
 from src.textos import PARTICULAS, forma_natural, normalizar, normalizar_sem_particulas
 
@@ -205,6 +206,7 @@ def unificar_externos_por_nome(itens, indice):
     # O Lattes é a identificação mais confiável: se o nome completo do EXT-N pertence a um único
     # EXT-L, o EXT-N passa a ser o EXT-L. Nome de dois EXT-L não junta. Lattes suspeito fica
     # fora da comparação. Os dois casos viram aviso para revisão. Nome abreviado nunca junta.
+    # Esta é a única junção de externos por nome: depois daqui nenhuma etapa troca ids.
     externos = indice['externos']
     em_uso = sorted(ids_dos_participantes(itens))
     lattes_por_nome, avisos = {}, []
@@ -231,13 +233,18 @@ def unificar_externos_por_nome(itens, indice):
             nome = externos[identificador]['nomes'].most_common(1)[0][0]
             avisos.append(f"{nome} ({identificador}): mais de um Lattes com esse nome "
                           f"({', '.join(sorted(alvos))}); não juntado")
-    for identificador, lattes in trocas.items():
-        externos[lattes]['nomes'].update(externos.pop(identificador)['nomes'])
+    trocar_ids(itens, externos, trocas)
+    return len(trocas), sorted(avisos)
+
+
+def trocar_ids(itens, externos, trocas):
+    """Aplica as junções {id que sai: id que fica}: soma os nomes vistos e troca o id nos itens."""
+    for antigo, novo in trocas.items():
+        externos[novo]['nomes'].update(externos.pop(antigo)['nomes'])
     for item in itens:
         for participante in item['participantes']:
             participante['id'] = trocas.get(participante['id'], participante['id'])
         item['participantes'] = sem_repetidos(item['participantes'])
-    return len(trocas), sorted(avisos)
 
 
 def ids_dos_participantes(itens):
@@ -251,10 +258,12 @@ def ids_dos_participantes(itens):
 
 def nomes_completos(externo):
     """Devolve os nomes completos (sem abreviação) já vistos do externo, na ordem natural."""
+    # Sem partículas, como no id EXT-N: 'Carolina de Aguiar Ferreira' = 'Carolina Aguiar Ferreira'.
     nomes = set()
     for nome in externo['nomes']:
-        if not esta_abreviado(nome) and normalizar(forma_natural(nome)):
-            nomes.add(normalizar(forma_natural(nome)))
+        chave = normalizar_sem_particulas(forma_natural(nome))
+        if not esta_abreviado(nome) and chave:
+            nomes.add(chave)
     return nomes
 
 
@@ -270,3 +279,89 @@ def lattes_suspeito(nomes):
             if not palavras[i] & palavras[j]:
                 return True
     return False
+
+
+# ------------------------------------------------------------------- nome do meio faltando
+def unificar_nomes_do_meio(itens, indice):
+    """Junta o externo cujo nome é o de outro sem algum nome do meio; devolve (quantos juntou, avisos)."""
+    # 'Jorge Sotomayor Tello' e 'Jorge Manuel Sotomayor Tello' são a mesma pessoa quando: mesmo
+    # primeiro e último nome, todas as palavras do nome curto estão no longo, nenhum é abreviado
+    # e os dois têm coautor em comum (sem nunca aparecerem juntos no mesmo item). Nome curto que
+    # cabe em dois nomes longos não junta; dois Lattes nunca juntam. Os dois casos viram aviso.
+    externos = indice['externos']
+    longos_por_curto = nomes_mais_longos(nomes_comparaveis(itens, externos), coautores_dos_externos(itens))
+    trocas, avisos = {}, []
+    for curto, longos in sorted(longos_por_curto.items()):
+        nome = externos[curto]['nomes'].most_common(1)[0][0]
+        if len(longos) > 1:
+            avisos.append(f"{nome} ({curto}): cabe em mais de um nome ({', '.join(longos)}); não juntado")
+        elif curto.startswith('EXT-L') and longos[0].startswith('EXT-L'):
+            avisos.append(f'{nome} ({curto}) e {longos[0]}: dois Lattes com nomes parecidos; não juntado')
+        elif curto.startswith('EXT-L'):
+            trocas[longos[0]] = curto  # fica o id do Lattes
+        else:
+            trocas[curto] = longos[0]
+    # Junção em cadeia (A -> B e B -> C) fica de fora: só junta direto no id que permanece.
+    trocas = {antigo: novo for antigo, novo in trocas.items() if novo not in trocas}
+    trocar_ids(itens, externos, trocas)
+    return len(trocas), sorted(avisos)
+
+
+def nomes_comparaveis(itens, externos):
+    """{id: nomes completos} dos externos em uso que podem ser comparados por nome."""
+    # Fica de fora o Lattes suspeito e o externo com nome que já é de outro externo (homônimos
+    # ou nome de dois Lattes, já avisados na junção anterior).
+    nomes = {}
+    for identificador in sorted(ids_dos_participantes(itens)):
+        if not identificador.startswith('EXT-'):
+            continue
+        completos = nomes_completos(externos[identificador])
+        if identificador.startswith('EXT-L') and lattes_suspeito(completos):
+            continue
+        nomes[identificador] = completos
+    donos = {}
+    for identificador, completos in nomes.items():
+        for nome in completos:
+            donos.setdefault(nome, set()).add(identificador)
+    comparaveis = {}
+    for identificador, completos in nomes.items():
+        if all(len(donos[nome]) == 1 for nome in completos):
+            comparaveis[identificador] = completos
+    return comparaveis
+
+
+def coautores_dos_externos(itens):
+    """{id do externo: ids de todos que aparecem com ele em algum item}."""
+    coautores = {}
+    for item in itens:
+        ids = {participante['id'] for participante in item['participantes']}
+        for identificador in ids:
+            if identificador.startswith('EXT-'):
+                coautores.setdefault(identificador, set()).update(ids - {identificador})
+    return coautores
+
+
+def nomes_mais_longos(nomes, coautores):
+    """{id: [ids cujo nome contém o dele, com o mesmo primeiro e último nome e coautor em comum]}."""
+    por_pontas = {}
+    for identificador, completos in nomes.items():
+        for nome in completos:
+            palavras = nome.split()
+            if len(palavras) >= 2:
+                chave = (palavras[0], palavras[-1])
+                por_pontas.setdefault(chave, []).append((identificador, set(palavras)))
+    longos = {}
+    for grupo in por_pontas.values():
+        for curto, palavras_curto in grupo:
+            for longo, palavras_longo in grupo:
+                if curto != longo and palavras_curto < palavras_longo and mesma_pessoa(curto, longo, coautores):
+                    longos.setdefault(curto, set()).add(longo)
+    return {curto: sorted(ids) for curto, ids in longos.items()}
+
+
+def mesma_pessoa(curto, longo, coautores):
+    """Têm coautores em comum e nunca aparecem juntos no mesmo item (aí seriam duas pessoas)?"""
+    do_curto, do_longo = coautores.get(curto, set()), coautores.get(longo, set())
+    if longo in do_curto:
+        return False
+    return len(do_curto & do_longo) >= COAUTORES_EM_COMUM_PARA_JUNTAR

@@ -4,7 +4,7 @@
 //  - 'filters'   o recorte mudou (filtros ou rede ampliada) → invalida o recorte memoizado (selectors.ts)
 //  - 'selection' nó/aresta selecionado mudou
 //  - 'view'      só a aparência mudou (hover, câmera, cores, rótulos) → redesenha o canvas
-//  - 'peso'      o modo peso foi ligado ou desligado → redesenha o canvas, os painéis e a ajuda
+//  - 'peso'      o modo peso foi ligado ou desligado → redesenha o canvas, os painéis e a legenda
 import type { ColorMode, GNode, LayoutMode } from './types';
 import { E, YMAX, YMIN } from './model';
 

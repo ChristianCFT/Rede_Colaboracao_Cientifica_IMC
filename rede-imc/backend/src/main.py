@@ -25,6 +25,6 @@ app.include_router(api_router)
 
 
 @app.exception_handler(Exception)
-async def _err(_: Request, e: Exception) -> JSONResponse:
+async def _err(_: Request, __: Exception) -> JSONResponse:
     log.exception('erro não tratado')
     return JSONResponse(status_code=500, content={'detail': 'Erro interno do servidor'})

@@ -1,9 +1,8 @@
 // Comunicação com o backend e contratos da API (espelham backend/src/schemas/graph_schema.py).
 
-export interface Producao { art: number; prj: number; ori: number; ban: number; ptt: number }
 export interface NodeDTO {
   id: string; label: string; instituto: string; area: string; grupo: string; comp: boolean; mat: boolean;
-  grau: number; lattes_url: string; observacao: string; producao: Producao | null;
+  grau: number; lattes_url: string;
   x: number; y: number; x_area: number; y_area: number;
 }
 export interface EdgeDTO {

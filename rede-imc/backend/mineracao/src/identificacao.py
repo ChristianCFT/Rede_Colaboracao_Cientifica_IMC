@@ -7,7 +7,7 @@ import collections
 import json
 import re
 
-from configuracao import ARQUIVO_CORRESPONDENCIAS
+from configuracao import ARQUIVO_CORRESPONDENCIAS, PALAVRAS_DE_INSTITUICAO
 from src.textos import (PARTICULAS, PARTICULAS_MULTILETRA, forma_natural, hash_curto,
                         limpar_espacos, normalizar, normalizar_sem_particulas)
 
@@ -157,6 +157,8 @@ def procurar_professor(texto, indice):
 
 def classificar_desconhecido(texto, indice, exigir_lattes):
     """Nível 5: devolve (id EXT-N, método) para nome completo; senão (None, motivo)."""
+    if eh_instituicao(texto):
+        return None, 'nao_e_pessoa'
     natural = forma_natural(texto)
     palavras = [palavra for palavra in normalizar(natural).split() if palavra not in PARTICULAS]
     abreviado = esta_abreviado(texto)
@@ -170,6 +172,11 @@ def classificar_desconhecido(texto, indice, exigir_lattes):
     if len(palavras) < 3:
         return None, 'nome_curto'
     return externo_por_nome(natural, indice), 'nome_completo_externo'
+
+
+def eh_instituicao(texto):
+    """O texto lido como nome é uma instituição ou um endereço ('UNIVERSIDADE FEDERAL DE ...')?"""
+    return bool(set(normalizar(texto).split()) & PALAVRAS_DE_INSTITUICAO)
 
 
 def professor_ou_externo_por_lattes(lattes, nome, indice):

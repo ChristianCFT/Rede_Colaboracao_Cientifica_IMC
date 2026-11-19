@@ -4,51 +4,23 @@ Recebe os grupos montados pela deduplicação (cada grupo em ordem de leitura, o
 do seu primeiro item) e devolve uma atividade por grupo, com todos os participantes e fontes.
 """
 import collections
-import re
 
-from src.textos import normalizar, normalizar_sem_particulas
+from src.textos import normalizar
 
-# Captura 'SOBRENOME, Nomes' para reescrever como 'Nomes SOBRENOME'.
-NOME_INVERTIDO = re.compile(r'^(.*?),\s*(.*)$')
 # Motivos de nomes que nem chegam a ser pessoas e não vão para 'nomes_nao_resolvidos'.
-MOTIVOS_DESCARTADOS = ('et al', 'vazio')
+MOTIVOS_DESCARTADOS = ('et al', 'vazio', 'nao_e_pessoa')
 
 
 def consolidar(grupos):
     """Recebe a lista de grupos de itens e devolve a lista de atividades."""
-    apelidos = {}
-    for grupo in grupos:
-        juntar_apelidos(grupo, apelidos)
+    # Os ids dos externos já chegam resolvidos da etapa 3 (externos.py): aqui nada é juntado.
     atividades = []
     for grupo in grupos:
-        atividades.append(montar_atividade(grupo, apelidos))
+        atividades.append(montar_atividade(grupo))
     return atividades
 
 
-def juntar_apelidos(grupo, apelidos):
-    """Acrescenta aos apelidos os EXT-N que, no mesmo grupo, aparecem também como EXT-L."""
-    # O mesmo externo pode vir com link (EXT-L) num CV e sem link (EXT-N) em outro: quando isso
-    # acontece na mesma atividade, com o mesmo nome, o EXT-N passa a ser o EXT-L.
-    com_link = {}
-    for item in grupo:
-        for participante in item['participantes']:
-            if participante['id'].startswith('EXT-L'):
-                com_link[nome_natural(participante['nome'])] = participante['id']
-    for item in grupo:
-        for participante in item['participantes']:
-            if not participante['id'].startswith('EXT-N'):
-                continue
-            chave = nome_natural(participante['nome'])
-            if chave in com_link:
-                apelidos[participante['id']] = com_link[chave]
-
-
-def nome_natural(nome):
-    """'SILVA, Ana Maria' -> 'ANA MARIA SILVA' (normalizado e sem partículas)."""
-    return normalizar_sem_particulas(NOME_INVERTIDO.sub(r'\2 \1', nome))
-
-
-def montar_atividade(grupo, apelidos):
+def montar_atividade(grupo):
     """Recebe os registros de uma mesma atividade e devolve a atividade consolidada."""
     atividade = {
         'dim': grupo[0]['dim'],
@@ -60,7 +32,7 @@ def montar_atividade(grupo, apelidos):
         'aluno_ou_candidato': mais_comum([item['aluno'] or item['candidato'] for item in grupo]),
         'periodo': mais_comum([item['periodo'] for item in grupo]),
         'situacao': mais_comum([item['situacao'] for item in grupo]),
-        'participantes': juntar_participantes(grupo, apelidos),
+        'participantes': juntar_participantes(grupo),
         'nao_resolvidos': juntar_nao_resolvidos(grupo),
         'cvs': sorted({item['dono'] for item in grupo}),
         'fontes': [item['fonte'] for item in grupo],
@@ -71,12 +43,12 @@ def montar_atividade(grupo, apelidos):
     return atividade
 
 
-def juntar_participantes(grupo, apelidos):
+def juntar_participantes(grupo):
     """Devolve {id: {'papeis', 'metodos'}} lendo os registros em ordem de fonte."""
     participantes = {}
     for item in sorted(grupo, key=ler_fonte):
         for participante in item['participantes']:
-            pessoa = apelidos.get(participante['id'], participante['id'])
+            pessoa = participante['id']
             if pessoa not in participantes:
                 participantes[pessoa] = {'papeis': set(), 'metodos': set()}
             participantes[pessoa]['papeis'].add(participante['papel'])
