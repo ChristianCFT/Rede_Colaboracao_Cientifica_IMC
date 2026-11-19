@@ -22,7 +22,7 @@ export function initFilterSummary(): void {
   const el = $('stats');
   const paint = (): void => {
     const a = active();
-    if (!a.length) { el.textContent = `${fmt(MAIN_NODES)} pesquisadores · ${fmt(MAIN_EDGES)} arestas (não direcionadas)`; return; }
+    if (!a.length) { el.textContent = `${fmt(MAIN_NODES)} pesquisadores · ${fmt(MAIN_EDGES)} Arestas`; return; }
     el.innerHTML = `Filtros: ${a.join(' · ')} · <button type="button" class="lnk" id="clr">Limpar</button>`;
     $('clr').addEventListener('click', () => resetFilters());
   };
