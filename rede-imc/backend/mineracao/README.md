@@ -1,100 +1,176 @@
-# GRAFOS_UNIFEI
+# Mineração dos currículos Lattes
 
-Lê os currículos Lattes (HTML) dos docentes da UNIFEI e gera os 4 datasets da rede de
-colaboração acadêmica, com o IMC como camada central. Cada relação liga um professor do IMC a
-outra pessoa e guarda, em 5 dimensões, os códigos das atividades que os dois fizeram juntos.
+Lê os currículos Lattes (HTML) dos docentes da UNIFEI e gera os **4 CSVs** que alimentam o backend da
+Rede de Colaboração IMC. Cada relação liga um pesquisador do IMC a outra pessoa e guarda, em cinco
+dimensões, as atividades que os dois fizeram juntos.
 
-## As cinco dimensões (nesta ordem em todos os vetores)
+> Visão geral do projeto (backend e frontend): [README do rede-imc](../../README.md).
 
-ART (artigos e trabalhos completos em anais) · PRJ (projetos de pesquisa) · ORI (orientações
-concluídas) · BAN (bancas) · PTT (produção técnico-tecnológica).
+---
 
-## Os 4 CSVs (`backend/data/raw/`)
+## Em resumo
 
-UTF-8 com BOM, fim de linha `\r\n`, listas gravadas como JSON. Números da execução com
-`Professores_v7_somente_HTML.zip` (521 currículos, 93.970 registros, 81.942 atividades únicas):
+```
+dados/brutos/Professores_v8.zip  ──►  python mineracao/main.py  ──►  backend/data/raw/*.csv
+        (521 currículos)                  6 etapas, ~70 s              (lidos pela API)
+```
 
-| Arquivo | Uma linha por | Linhas |
-|---|---|---|
-| `dataset_completo_UNIFEI.csv` | docente (id, nome, instituto, área, SIAPE, link Lattes) | 549 |
-| `dataset_entrada_IMC.csv` | pesquisador da rede, com os códigos das suas atividades | 1.534 |
-| `dataset_saida_IMC.csv` | relação (par de pesquisadores) com vetor bruto e vetor contagem | 3.256 |
-| `dataset_atividades_IMC.csv` | atividade única (título, ano, participantes, fontes...) | 56.709 |
+Última execução, com `Professores_v8.zip`:
 
-Os códigos dos vetores (ex.: `ART-001804`) são o `id_atividade` do dataset de atividades.
-O `pesquisador_id` é o SIAPE; sem SIAPE, `PROV-L<Lattes>` ou `PROV-N<hash>`. Externos recebem
-`EXT-L<Lattes>` (vistos com link) ou `EXT-N<hash do nome>`.
+| | |
+|---|---|
+| Currículos lidos | 521 |
+| Registros extraídos | 97.223 |
+| Atividades únicas (após juntar repetições) | 84.257 |
+| Relações na rede do IMC | 3.280 |
 
-## Requisitos
-
-Python 3.9 ou mais novo, `beautifulsoup4` e `lxml`. Já estão no `requirements.txt` do backend; a mineração usa o mesmo `.venv` do backend.
+---
 
 ## Como rodar
 
-Coloque o ZIP em `mineracao/dados/brutos/Professores_v8.zip` (ou passe outro com `--entrada`).
-Na primeira execução ele é extraído em `dados/temporarios/`; se a extração for interrompida,
-apague essa pasta e rode de novo. A execução leva cerca de 70 segundos.
+A mineração usa o mesmo ambiente Python do backend. Se o `.venv` ainda não existe, veja o
+[README do rede-imc](../../README.md#1-preparar-o-ambiente-python-só-na-primeira-vez).
 
-De dentro de `backend/`, com o `.venv` do backend ativado:
+De dentro de `backend/`, com o `.venv` ativo:
 
 ```bash
 python mineracao/main.py
 ```
 
-Os CSVs são gravados em `backend/data/raw/`, onde a API os lê. Rode a mineração antes de subir o backend.
+A saída mostra o andamento:
 
-Opções: `--entrada` (ZIP ou pasta já extraída) e `--saida` (pasta dos CSVs, padrão
-`backend/data/raw`). Exemplo: `python mineracao/main.py --entrada outro.zip --saida /tmp/teste`.
+```
+[1/6] Lendo índices, pastas e cabeçalhos dos currículos...
+[2/6] Extraindo as cinco dimensões de cada currículo...
+[3/6] Conferindo externos que podem ser professores...
+[4/6] Juntando registros repetidos em atividades únicas...
+[5/6] Montando os pares e os vetores da camada...
+[6/6] Gravando os 4 CSVs...
+Pronto: 97223 registros, 84257 atividades únicas, 3280 relações. CSVs em .../backend/data/raw
+```
 
-## Estrutura esperada do ZIP
+### Opções
 
-```text
+| Opção | Padrão | Uso |
+|---|---|---|
+| `--entrada` | `mineracao/dados/brutos/Professores_v8.zip` | Outro ZIP ou uma pasta já extraída |
+| `--saida` | `backend/data/raw` | Outra pasta para os CSVs |
+
+```bash
+python mineracao/main.py --entrada outro.zip --saida /tmp/teste
+```
+
+Na primeira execução, o ZIP é extraído em `mineracao/dados/temporarios/`. Se a extração for
+interrompida, apague essa pasta e rode de novo.
+
+---
+
+## Entrada: o ZIP dos currículos
+
+Uma pasta por instituto, com um índice `.txt` e uma pasta por professor:
+
+```
 IMC - Instituto de Matemática e Computação/
-├── IMC.txt                      índice: nome - link Lattes - link SIGAA (siape=...)
+├── IMC.txt              nome - link Lattes - link SIGAA (siape=...)
 └── Nome do Professor/
     └── Currículo do Sistema de Currículos Lattes (Nome do Professor).html
 IFQ - Instituto de Física e Química/
 └── ...
 ```
 
-A primeira palavra do nome da pasta do instituto precisa estar em `SIGLA_POR_PASTA`
-(`configuracao.py`).
+A primeira palavra do nome da pasta (`IMC`, `IFQ`, `UA1`...) precisa estar em `SIGLA_POR_PASTA`,
+no `configuracao.py`. É ali que `UA1` vira `ICT`, por exemplo.
 
-## As 6 etapas (`main.py`)
+---
 
-1. `professores.py` + `indices.py`: lê os índices `.txt`, as pastas e o cabeçalho de cada CV;
-   cada professor ganha um id (SIAPE).
-2. `curriculos.py` + `dimensoes.py`: percorre o HTML e extrai os itens das 5 dimensões.
-3. `identificacao.py` + `externos.py`: descobre quem é cada nome (níveis 1 a 5) e corrige
-   externos que na verdade são professores.
-4. `deduplicacao.py` + `evidencias.py` + `consolidacao.py`: junta o mesmo artigo registrado no CV
-   de cada coautor numa atividade única (union-find).
-5. `rede.py`: monta os pares, numera as atividades e calcula os vetores.
-6. `csvs.py`: grava os 4 CSVs.
+## Saída: os 4 CSVs
 
-Constantes (caminhos, siglas, seções do Lattes, limiares) ficam em `configuracao.py`;
-funções de texto usadas por várias etapas, em `src/textos.py`.
+Gravados em `backend/data/raw/`, em UTF-8 com BOM (abre com acentos no Excel), fim de linha `\r\n`
+e listas no formato JSON. **O backend depende desses nomes e colunas.**
+
+| Arquivo | Uma linha por | Linhas |
+|---|---|---|
+| `dataset_completo_UNIFEI.csv` | docente da UNIFEI | 549 |
+| `dataset_entrada_IMC.csv` | pesquisador da rede do IMC | 1.541 |
+| `dataset_saida_IMC.csv` | relação (dupla de pesquisadores) | 3.280 |
+| `dataset_atividades_IMC.csv` | atividade única | 58.665 |
+
+**`dataset_completo_UNIFEI.csv`**: cadastro dos docentes: `pesquisador_id`, `nome`, `instituto`, `area`, `ciape`, `lattes_url`.
+
+**`dataset_entrada_IMC.csv`**: os vértices da rede. Para cada pesquisador: nome, instituto, área,
+uma coluna por dimensão com os códigos das atividades (ex.: `["ART-002164", ...]`) e o
+`vetor contagem` (`[ART, PRJ, ORI, BAN, PTT]`).
+
+**`dataset_saida_IMC.csv`**: as arestas. Os dois pesquisadores, seus institutos e áreas, o
+`tipo de relacao` (`IMC-IMC`, `IMC-IFQ`, `IMC-EXT`...), o `vetor bruto` (códigos das atividades em
+comum por dimensão) e o `vetor contagem`.
+
+**`dataset_atividades_IMC.csv`**: o que cada código significa: dimensão, tipo, título, ano, DOI,
+participantes, de qual currículo veio e como cada pessoa foi identificada.
+
+### Identificadores
+
+| Formato | Quem é |
+|---|---|
+| `1234567` | Docente da UNIFEI, pelo SIAPE |
+| `PROV-L<lattes>` / `PROV-N<hash>` | Docente sem SIAPE (pelo Lattes ou pelo nome) |
+| `EXT-L<lattes>` | Externo identificado por link do Lattes |
+| `EXT-N<hash>` | Externo identificado pelo nome completo |
+
+Os códigos de atividade (`ART-000001`, `PRJ-000001`...) são o `id_atividade` do dataset de atividades.
+
+---
+
+## As 6 etapas
+
+| # | Etapa | Módulos em `src/` |
+|---|---|---|
+| 1 | Lê os índices `.txt`, as pastas e o cabeçalho de cada currículo. Cada professor ganha um id (SIAPE) | `professores.py`, `indices.py` |
+| 2 | Percorre o HTML e extrai os itens das 5 dimensões | `curriculos.py`, `dimensoes.py` |
+| 3 | Descobre quem é cada nome citado e corrige externos que na verdade são professores | `identificacao.py`, `externos.py` |
+| 4 | Junta o mesmo item registrado no currículo de cada coautor em uma atividade única | `deduplicacao.py`, `evidencias.py`, `consolidacao.py` |
+| 5 | Monta as duplas, numera as atividades e calcula os vetores | `rede.py` |
+| 6 | Grava os 4 CSVs | `csvs.py` |
+
+Funções de texto usadas por várias etapas ficam em `src/textos.py`. Todas as constantes (caminhos,
+siglas, seções do Lattes e limiares de semelhança) ficam em `configuracao.py`. Para mudar uma regra,
+mude lá.
+
+### Como um nome é identificado (etapa 3)
+
+Do mais confiável para o menos confiável:
+
+1. O próprio item traz o link do Lattes da pessoa.
+2. É o dono do currículo (nome em negrito ou forma de citação declarada).
+3. Nome completo igual ao de um docente.
+4. Forma de citação que pertence a um único docente.
+5. Nome completo de alguém de fora da UNIFEI, que vira um externo (`EXT-N`).
+
+Nomes que não passam em nenhum nível (como `MELO, D. S.` sem link) **ficam fora da rede**, de
+propósito, para não criar relações falsas. Eles aparecem na coluna `nomes_nao_resolvidos`.
+
+---
 
 ## Correspondências confirmadas à mão
 
-`correspondencias_confirmadas.json` guarda identidades revisadas por uma pessoa: formas de
-citação (`citacoes`) e Lattes iDs (`lattes`) que pertencem a um professor. O sistema nunca une
-abreviações ou nomes parecidos sozinho; só usa o que estiver nesse arquivo. Sem ele, os CSVs mudam.
+`correspondencias_confirmadas.json` guarda identidades revisadas por uma pessoa:
 
-## Limitações essenciais
+- `citacoes`: formas de citação (`SOBRENOME, I. N.`) que pertencem a um docente;
+- `lattes`: links do Lattes que pertencem a docentes sem Lattes no cadastro.
 
-- Coautores citados só por abreviação (`MELO, D. S.`), sem link Lattes, não são identificados e
-  ficam fora da rede (vão para `nomes_nao_resolvidos`). É de propósito: evita relações falsas.
-- 28 docentes não têm currículo no ZIP; só aparecem quando outro currículo os cita, e suas
-  colunas de atividades ficam vazias (nunca zero). Externos também não têm área nem atividades.
-- O extrator depende das classes do HTML do Lattes (`title-wrapper`, `inst_back`,
-  `cita-artigos`, `layout-cell-11`); se o CNPq mudar o layout, `src/curriculos.py` precisa de ajuste.
-- Título e ano de bancas, orientações e produção técnica saem de regras de texto: o Lattes não
-  separa esses campos.
-- Cada currículo é interpretado duas vezes (cabeçalho na etapa 1, itens na etapa 2): guardar as
-  521 páginas já interpretadas custaria cerca de 2 GB de memória.
+A mineração **nunca** junta abreviações ou nomes parecidos sozinha; só usa o que estiver nesse
+arquivo. Mudar o arquivo muda os CSVs.
 
-## Dados pessoais
+---
 
-Os currículos e os CSVs têm nome, SIAPE e link do Lattes dos docentes. A pasta `dados/` não vai
-para o repositório (`.gitignore`); trate os CSVs com o mesmo cuidado.
+## Limitações
+
+- **Coautores só abreviados** e sem link do Lattes não são identificados (ver etapa 3).
+- **28 docentes não têm currículo no ZIP.** Eles só aparecem quando outro currículo os cita, e suas
+  colunas de atividades ficam vazias (não zero). Externos também não têm área nem atividades próprias.
+- **Depende do layout do Lattes.** O extrator usa classes do HTML (`title-wrapper`, `inst_back`,
+  `cita-artigos`, `layout-cell-11`). Se o CNPq mudar a página, `src/curriculos.py` precisa de ajuste.
+- **Título e ano** de bancas, orientações e produção técnica saem de regras de texto, porque o Lattes
+  não separa esses campos.
+- Só entram **orientações concluídas**. As em andamento ficam de fora.
+
