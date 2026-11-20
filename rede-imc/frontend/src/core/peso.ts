@@ -27,9 +27,9 @@ export function pesoDe(contagem: number[]): number {
   return w;
 }
 
-/** Tamanho visual de um peso, de 0 a 1: raiz de W / maior W. A raiz espalha os pesos baixos
- *  (a maioria fica abaixo de 0,10) sem mudar a ordem entre as relações. */
-export const escala = (w: number): number => (WMAX > 0 ? Math.sqrt(Math.min(1, w / WMAX)) : 0);
+/** Força visual de um peso, de 0 a 1: W / maior W da rede. Direta (sem raiz), para que as relações
+ *  fortes fiquem bem mais grossas que as fracas. */
+export const escala = (w: number): number => (WMAX > 0 ? Math.min(1, w / WMAX) : 0);
 
 /** Peso no quantil q (0 a 1) entre todas as relações da rede (valores de exemplo da legenda). */
 export const quantil = (q: number): number =>

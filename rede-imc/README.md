@@ -128,7 +128,8 @@ Os indicadores no topo (HUD) sempre se referem à rede principal do IMC.
 
 ### Modo peso
 
-Desligado, a rede usa a contagem de atividades em comum, sem normalização. Ligado, cada ligação passa
+Desligado, a rede usa a contagem de atividades em comum, sem normalização (espessura leve pelas
+atividades em comum, todas com a mesma intensidade). Ligado, cada ligação passa
 a ter um **peso de 0 a 1**, calculado como na proposta metodológica:
 
 - cada dimensão vira `ln(1 + x) / ln(1 + maior valor da rede)`;
@@ -137,8 +138,8 @@ a ter um **peso de 0 a 1**, calculado como na proposta metodológica:
 Os maiores valores vêm da rede inteira e não mudam com os filtros. Desligar uma dimensão ou estreitar a
 janela temporal recalcula o peso só com as atividades visíveis, na mesma escala. No modo peso:
 
-- **espessura da ligação** = peso, pela raiz de peso ÷ maior peso da rede, para que as ligações fracas
-  continuem visíveis. As mais fortes são desenhadas por cima, e a legenda mostra três espessuras de referência;
+- **espessura e intensidade da ligação** crescem com peso ÷ maior peso da rede: as fracas ficam finas e
+  claras, as fortes grossas e quase sólidas, desenhadas por cima. A legenda mostra três referências;
 - **clique em uma ligação**: o peso, a posição entre as ligações visíveis e como o peso é calculado.
   O vetor e as atividades não aparecem;
 - **clique em um nó**: os parceiros ordenados pelo peso da relação com cada um;
