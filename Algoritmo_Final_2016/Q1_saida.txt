@@ -1,0 +1,48 @@
+==============================================================================
+  RECORTE 2016-2026  ·  /home/thiago/Projetos/Rede_Colaboracao_Cientifica_IMC/Algoritmo_Final_2016/dataset_IMC_2016_2026.xlsx
+==============================================================================
+Pesos (modelo do artigo): W = 0.40*z_ART + 0.20*z_PRJ + 0.20*z_ORI + 0.15*z_PTT + 0.05*z_BAN | z = ln(1+x)/ln(1+xmax) | xmax: ART 33, PRJ 10, ORI 5, BAN 40, PTT 17 | min-w 0.0 | resolução 1.0
+Conferência da aba saida: 524 linhas IMC-IMC = 262 pares únicos; cada par com vetor idêntico nos dois sentidos  [OK]
+
+GRAFO: 49 docentes | 262 laços | densidade 0.223 | 4 componentes conexos (maior: 46) | 3 sem laço
+
+LOUVAIN: 7 grupos (tamanhos [19, 18, 7, 2, 1, 1, 1]), 3 com 3+ docentes
+  modularidade Q = 0.547 | estabilidade (NMI médio entre 20 sementes) = 0.98 | NMI grupos x área = 0.62
+
+------------------------------------------------------------------------------
+2. TOP 5 TRIOS MAIS FORTES (de 854 triângulos) - ranking pelo elo mais fraco
+------------------------------------------------------------------------------
+  elo fraco = menor peso entre os 3 pares | força = soma dos 3 pesos
+
+  1. elo fraco  0.509 | força   1.752 | grupo [2] | Melise Paula + Rafael Frinhani + Vanessa Souza
+  2. elo fraco  0.499 | força   1.750 | grupo [2] | Bruno Batista + Rafael Frinhani + Vanessa Souza
+  3. elo fraco  0.466 | força   1.683 | grupo [1] | Alexander Fonseca + Denis Braga + Luis Mello
+  4. elo fraco  0.398 | força   1.564 | grupo [2] | Bruno Batista + Melise Paula + Rafael Frinhani
+  5. elo fraco  0.398 | força   1.547 | grupo [2] | Bruno Batista + Melise Paula + Vanessa Souza
+
+------------------------------------------------------------------------------
+3. TOP 5 TRIOS MAIS FORTES (de 854 triângulos) - ranking pela SOMA DOS PESOS
+------------------------------------------------------------------------------
+  soma = soma dos 3 pesos | elo fraco = menor peso entre os 3 pares
+
+  1. soma  1.789 | elo fraco  0.336 | grupo [1] | Denis Braga + Fabio Dias + Luis Mello
+  2. soma  1.752 | elo fraco  0.509 | grupo [2] | Melise Paula + Rafael Frinhani + Vanessa Souza
+  3. soma  1.750 | elo fraco  0.499 | grupo [2] | Bruno Batista + Rafael Frinhani + Vanessa Souza
+  4. soma  1.683 | elo fraco  0.466 | grupo [1] | Alexander Fonseca + Denis Braga + Luis Mello
+  5. soma  1.564 | elo fraco  0.398 | grupo [2] | Bruno Batista + Melise Paula + Rafael Frinhani
+
+------------------------------------------------------------------------------
+4. TOP 3 DOCENTES COM MAIS INFLUÊNCIA POR LIGAÇÕES (nº de colegas)
+------------------------------------------------------------------------------
+  1. Maicon Sônego                          ligações 18 | peso   0.986 | grupo 1 | Sem área
+  2. Rick Antônio Rischter                  ligações 18 | peso   0.914 | grupo 1 | Matemática
+  3. Braulio Augusto Garcia                 ligações 17 | peso   2.100 | grupo 1 | Matemática
+  (empate no 3º lugar em ligações: Lucas Ruiz dos Santos, Mariza Stefanello Simsen, Leandro Gustavo Gomes; desempate pelo outro critério)
+
+------------------------------------------------------------------------------
+5. TOP 3 DOCENTES COM MAIS INFLUÊNCIA POR PESO (força = soma dos pesos)
+------------------------------------------------------------------------------
+  1. Luis Fernando de Osório Mello          ligações 15 | peso   4.024 | grupo 1 | Matemática
+  2. Rafael de Magalhães Dias Frinhani      ligações 16 | peso   3.071 | grupo 2 | Computação
+  3. Denis de Carvalho Braga                ligações 15 | peso   3.030 | grupo 1 | Matemática
+
