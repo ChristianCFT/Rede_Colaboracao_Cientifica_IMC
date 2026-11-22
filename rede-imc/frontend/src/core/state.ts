@@ -1,26 +1,17 @@
-// Estado da interface, separado por responsabilidade, + barramento de eventos.
-//
-// Tópicos:
-//  - 'filters'   o recorte mudou (filtros ou rede ampliada) → invalida o recorte memoizado (selectors.ts)
-//  - 'selection' nó/aresta selecionado mudou
-//  - 'view'      só a aparência mudou (hover, câmera, cores, rótulos) → redesenha o canvas
-//  - 'peso'      o modo peso foi ligado ou desligado → redesenha o canvas, os painéis e a legenda
+// estado da interface + eventos (filters, selection, view, peso)
 import type { ColorMode, GNode, LayoutMode } from './types';
 import { E, YMAX, YMIN } from './model';
 
-/** Câmera: tamanho da área do canvas e transformação mundo → tela (x·k + tx). */
+/** mundo → tela: x·k + tx */
 export const camera = { W: 0, H: 0, dpr: window.devicePixelRatio || 1, k: 0.3, tx: 0, ty: 0 };
 
-/** Seleção e hover: índices em N / E (-1 = nenhum). */
+/** -1 = nenhum */
 export const selection = { node: -1, edge: -1, hover: -1 };
 
-/** Filtros do recorte da rede. */
 export const filters = {
-  /** Dimensões ativas: art, prj, ori, ban, ptt. */
   dims: [true, true, true, true, true],
-  /** Tipos de relação da rede principal (IMC-IMC, IMC-EXT...). */
+  /** IMC-IMC, IMC-EXT... */
   types: {} as Record<string, boolean>,
-  /** Áreas do IMC. */
   groups: { 'Computação': true, 'Matemática': true, 'Outras': true } as Record<string, boolean>,
   yearFrom: 0,
   yearTo: 0,
@@ -28,39 +19,36 @@ export const filters = {
   showExternal: true,
 };
 
-/** Controles de exibição: não alteram o recorte, só o desenho. */
+/** só mudam o desenho */
 export const display = {
   colorMode: 'inst' as ColorMode,
   layoutMode: 'free' as LayoutMode,
   labelsImc: true,
   physics: true,
-  /** Modo peso: espessura das arestas e painéis pelo peso normalizado da colaboração (0 a 1).
-   *  Desligado, tudo funciona pela contagem de atividades em comum, como antes. */
+  /** desligado usa a contagem de atividades */
   peso: false,
 };
 
-/** Liga ou desliga o modo peso. */
 export function setPeso(ligado: boolean): void {
   display.peso = ligado;
   emit('peso');
 }
 
-/** Pesquisadores sem colaboração com o IMC (só vértices, em anel ao redor da rede principal). */
 export const extended = { visible: false };
 
-/** Pesquisador do IMC passa no filtro de área? (pesquisadores de fora do IMC sempre passam). */
+/** quem não é do IMC sempre passa */
 export const passesArea = (n: GNode): boolean =>
   n.inst !== 'IMC' || (n.comp && !!filters.groups['Computação']) || (n.mat && !!filters.groups['Matemática']) ||
   (!n.comp && !n.mat && !!filters.groups['Outras']);
 
-/** A janela temporal cobre todo o período? (atividades sem ano só contam nesse caso). */
+/** atividades sem ano só contam se a janela pega tudo */
 export const fullYearRange = (): boolean => filters.yearFrom <= YMIN && filters.yearTo >= YMAX;
 
-// ---- Barramento ----
+// eventos
 type Topic = 'filters' | 'selection' | 'view' | 'peso';
 const subs: Record<Topic, (() => void)[]> = { filters: [], selection: [], view: [], peso: [] };
 let ver = 0;
-/** Versão do recorte: muda a cada emit('filters'); é a chave da memoização. */
+/** chave da memoização */
 export const filterVer = (): number => ver;
 export const on = (t: Topic, fn: () => void): void => { subs[t].push(fn); };
 export function emit(t: Topic): void {
@@ -68,7 +56,7 @@ export function emit(t: Topic): void {
   subs[t].forEach((f) => f());
 }
 
-/** Agrupa emissões disparadas na mesma tarefa (usado pelos sliders durante o arraste). */
+/** usado pelos sliders durante o arraste */
 const pendingTopics = new Set<Topic>();
 let soon = false;
 export function emitSoon(t: Topic): void {
@@ -79,14 +67,13 @@ export function emitSoon(t: Topic): void {
 }
 
 export function initState(): void {
-  // Tipos de relação da rede principal em ordem decrescente de frequência (ordem fixa da lista na sidebar).
+  // ordem decrescente de frequência
   const cnt: Record<string, number> = {};
   E.forEach((e) => { cnt[e.tipo] = (cnt[e.tipo] ?? 0) + 1; });
   Object.keys(cnt).sort((a, b) => cnt[b]! - cnt[a]! || a.localeCompare(b)).forEach((t) => { filters.types[t] = true; });
   filters.yearFrom = YMIN; filters.yearTo = YMAX;
 }
 
-/** Volta todos os filtros ao estado inicial (tudo visível). */
 export function resetFilters(): void {
   Object.keys(filters.types).forEach((t) => { filters.types[t] = true; });
   Object.keys(filters.groups).forEach((g) => { filters.groups[g] = true; });

@@ -1,4 +1,3 @@
-"""Roteador principal da API."""
 from fastapi import APIRouter
 
 from src.config import API_PREFIX

@@ -1,4 +1,4 @@
-// Comunicação com o backend e contratos da API (espelham backend/src/schemas/graph_schema.py).
+// chamadas pro backend (tipos iguais ao graph_schema.py)
 
 export interface NodeDTO {
   id: string; label: string; instituto: string; area: string; grupo: string; comp: boolean; mat: boolean;
@@ -8,15 +8,14 @@ export interface NodeDTO {
 export interface EdgeDTO {
   source: string; target: string; tipo_relacao: string;
   vetor_contagem: number[]; vetor_bruto: string[][]; soma_bruta: number;
-  /** Peso normalizado da colaboração (0 a 1), com todas as atividades da dupla. */
+  // peso de 0 a 1
   peso: number;
 }
-/** Parâmetros para recalcular o peso no recorte: α e maior contagem de cada dimensão na rede. */
 export interface PesoDTO { alfas: number[]; referencias: number[] }
 export interface AtividadeDTO { ano: string; titulo: string }
 export interface GraphDTO {
   nodes: NodeDTO[]; edges: EdgeDTO[];
-  /** Pesquisadores sem colaboração direta com o IMC: só vértices, sem relações. */
+  // só vértices, sem relações
   sem_colaboracao: NodeDTO[];
   atividades: Record<string, AtividadeDTO>;
   paleta: Record<string, string>; cores_grupo: Record<string, string>; dimensoes: string[];

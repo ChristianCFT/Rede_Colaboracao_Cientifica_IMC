@@ -1,8 +1,6 @@
-// Peças de markup compartilhadas pelas vistas do painel direito.
 import { esc, fmt, pct } from '../../core/dom';
 import { DIMN, N, col } from '../../core/model';
 
-/** Vetor de 5 dimensões em grade. */
 export const vec = (v: number[]): string =>
   `<div class="vec">${v.map((x, j) => `<div><b>${fmt(x)}</b><span>${esc(DIMN[j] ?? '')}</span></div>`).join('')}</div>`;
 
@@ -11,7 +9,7 @@ export const nameLink = (i: number): string => `<a href="#" class="nl" data-n="$
 export const dot = (color: string): string => `<span class="sw" style="background:${color}"></span>`;
 
 export interface BarRow { label: string; title?: string; color: string; value: number; frac: number; muted?: boolean }
-/** Barras horizontais simples: rótulo · barra proporcional · "40% · 12". */
+/** ex: "40% · 12" */
 export function bars(rows: BarRow[]): string {
   return `<div class="bars">${rows.map((r) => {
     const w = Math.max(0, Math.min(1, r.frac)) * 100;
@@ -21,7 +19,6 @@ export function bars(rows: BarRow[]): string {
   }).join('')}</div>`;
 }
 
-/** Linha clicável de pesquisador: posição, bolinha, nome, instituto e um valor à direita. */
 export function personRow(rank: number, i: number, right: string): string {
   const n = N[i]!;
   return `<div class="pr" data-n="${i}"><span class="rk">${rank}</span>${dot(col(n.inst))}` +

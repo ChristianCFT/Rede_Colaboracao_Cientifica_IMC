@@ -1,15 +1,5 @@
-// Rótulos (nomes dos pesquisadores).
-//
-// Só pesquisadores do IMC têm nome desenhado (controle "Mostrar rótulos dos pesquisadores do IMC").
-// Os demais aparecem apenas no tooltip e no painel de detalhes.
-//
-// Quais aparecem: hover/seleção têm prioridade máxima; com destaque ativo, o nó em foco e seus
-// vizinhos; sem destaque, todos os visíveis do IMC. A prioridade de colisão vai para quem tem mais
-// parceiros no recorte.
-//
-// Posicionamento: guloso por prioridade com detecção de colisão de bounding boxes (grade espacial).
-// Cada rótulo tenta 4 posições (direita, esquerda, acima, abaixo do nó); se todas colidem ele é
-// omitido — exceto os "forçados" (hover/seleção).
+// rótulos: só pesquisadores do IMC. testa 4 posições em volta do nó e se colidir
+// em todas não desenha (menos hover/seleção)
 import { E, N } from '../../core/model';
 import { display, selection } from '../../core/state';
 import type { GNode } from '../../core/types';
@@ -21,7 +11,6 @@ interface Placed { x: number; y: number; h: number; text: string; strong: boolea
 
 const FONT = '11px system-ui,-apple-system,"Segoe UI",sans-serif';
 const FONT_STRONG = '600 12px system-ui,-apple-system,"Segoe UI",sans-serif';
-/** O pesquisador pode ter o nome desenhado? (é do IMC e o controle está marcado) */
 const labelEnabled = (n: GNode): boolean => n.inst === 'IMC' && display.labelsImc;
 
 function candidates(f: Frame): Candidate[] {

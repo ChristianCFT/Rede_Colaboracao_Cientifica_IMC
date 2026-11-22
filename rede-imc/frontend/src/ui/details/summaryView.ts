@@ -1,4 +1,4 @@
-// Estado vazio do painel: resumo executivo do recorte atual da rede principal.
+// resumo do recorte (painel vazio)
 import { fmt } from '../../core/dom';
 import { EXTENDED_NODES, N, col } from '../../core/model';
 import { extended } from '../../core/state';
@@ -6,14 +6,13 @@ import { getView } from '../../core/selectors';
 import type { View } from '../../core/selectors';
 import { bars, personRow } from './parts';
 
-/** Pesquisadores visíveis da rede principal (os sem colaboração com o IMC não entram nos indicadores). */
+/** só a rede principal */
 export function visiveis(v: View): number[] {
   const vis: number[] = [];
   for (let i = 0; i < N.length; i++) if (v.nOn[i] && !N[i]!.extended) vis.push(i);
   return vis;
 }
 
-/** Aviso de origem dos indicadores e barras "Pesquisadores por instituto" (os dois modos usam). */
 export function origem(): string {
   return extended.visible
     ? `<p class="mu sm">Indicadores da rede principal do IMC. Os ${fmt(EXTENDED_NODES)} pesquisadores sem colaboração com o IMC aparecem no grafo, mas não entram nestas contagens.</p>`

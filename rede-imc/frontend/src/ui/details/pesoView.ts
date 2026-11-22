@@ -1,6 +1,4 @@
-// Painel direito no modo peso. Em vez do vetor de características, mostra o peso normalizado de cada
-// relação (0 a 1). Usa o mesmo recorte do modo contagem: filtros de dimensão e de período mudam o peso,
-// mas as referências são fixas.
+// painel da direita no modo peso
 import { esc, fmt, fmtPeso } from '../../core/dom';
 import { DIM_LONG, E, N, col, dimCol } from '../../core/model';
 import { ALFA, REF } from '../../core/peso';
@@ -10,23 +8,22 @@ import { allOpen, cabecalho } from './nodeView';
 import { dot, nameLink, personRow } from './parts';
 import { origem, porInstituto, visiveis } from './summaryView';
 
-/** Posição de um valor entre outros: 1 + quantos são maiores (valores empatados dividem a posição). */
+/** empates dividem a posição */
 function posicao(valor: number, valores: number[]): number {
   let maiores = 0;
   for (const x of valores) if (x > valor) maiores++;
   return maiores + 1;
 }
 
-/** Pesos das arestas visíveis no recorte. */
 function pesosVisiveis(v: View): number[] {
   const out: number[] = [];
   for (let j = 0; j < E.length; j++) if (v.eOn[j]) out.push(v.fw[j]!);
   return out;
 }
 
-/** Explicação recolhível da fórmula, com a importância (α) e o maior valor de cada tipo na rede. */
+/** explicação da fórmula */
 function comoCalcula(): string {
-  const tipos = [0, 1, 2, 4, 3]; // da maior para a menor importância
+  const tipos = [0, 1, 2, 4, 3]; // maior pra menor importância
   const linhas = tipos.map((j) =>
     `<span>${dot(dimCol(j))}${esc(DIM_LONG[j] ?? '')}</span><b class="num">${Math.round((ALFA[j] ?? 0) * 100)}%</b><span class="mu num">${fmt(REF[j] ?? 0)}</span>`).join('');
   return `<details class="como"><summary>Como o peso é calculado</summary>
@@ -38,7 +35,6 @@ function comoCalcula(): string {
   A espessura da aresta no grafo acompanha o peso.</p></details>`;
 }
 
-/** Aresta: o peso da relação e a posição dela entre as relações visíveis. */
 export function edgePesoView(i: number): string {
   const e = E[i]!, v = getView(), w = v.fw[i]!;
   let lugar = '<span class="mu">Fora do recorte atual.</span>';
@@ -46,7 +42,7 @@ export function edgePesoView(i: number): string {
     const pesos = pesosVisiveis(v);
     lugar = `${fmt(posicao(w, pesos))}ª relação mais forte de ${fmt(pesos.length)} no recorte`;
   }
-  // Só quando o recorte deixa alguma atividade da dupla de fora (mesmo critério do modo contagem).
+  // só se o recorte deixou alguma atividade de fora
   const parcial = v.fsum[i] !== e.sum
     ? `<p class="mu sm">Com todas as atividades da dupla, o peso é <b>${fmtPeso(e.w)}</b>. Os filtros de dimensão e de período deixam de fora parte delas.</p>`
     : '';
@@ -58,7 +54,6 @@ export function edgePesoView(i: number): string {
   <div class="mu meta">${lugar}</div>${parcial}${comoCalcula()}`;
 }
 
-/** Pesquisador: parceiros ordenados pelo peso da relação com cada um. */
 export function nodePesoView(i: number): string {
   const v = getView();
   const parceiros = N[i]!.adj.filter((j) => v.eOn[j])
@@ -77,7 +72,6 @@ export function nodePesoView(i: number): string {
   <div class="li">${todas || '<span class="mu">Nenhuma com os filtros atuais.</span>'}</div></details>`;
 }
 
-/** Resumo: relações mais fortes do recorte. */
 export function summaryPesoView(): string {
   const v = getView();
   const relacoes: number[] = [];

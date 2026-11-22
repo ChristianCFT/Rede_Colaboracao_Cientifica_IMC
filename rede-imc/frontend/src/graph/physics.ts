@@ -1,9 +1,5 @@
-// Física leve (d3-force) sobre o layout pré-calculado pelo backend.
-// Cada nó é atraído para a sua posição de repouso (ax, ay); colisão afasta nós sobrepostos e as
-// arestas mantêm o comprimento original. Resultado: o desenho do NetworkX é preservado, o miolo
-// fica menos encavalado e os nós podem ser arrastados. Pausar congela tudo onde está.
-// Os pesquisadores sem colaboração com o IMC participam da mesma simulação: ficam ancorados no anel
-// calculado pelo backend e não têm arestas, então ligá-los ou desligá-los não desloca a rede principal.
+// física com d3-force em cima do layout do backend. cada nó é puxado pra sua
+// posição de repouso (ax, ay)
 import { forceCollide, forceLink, forceSimulation, forceX, forceY } from 'd3-force';
 import type { ForceX, ForceY, Simulation, SimulationLinkDatum } from 'd3-force';
 import { E, N } from '../core/model';
@@ -16,16 +12,14 @@ interface Link extends SimulationLinkDatum<GNode> { d: number; w: number }
 let sim: Simulation<GNode, Link> | null = null;
 let fX: ForceX<GNode> | null = null;
 let fY: ForceY<GNode> | null = null;
-/** forceX/forceY guardam os alvos na inicialização: reaplica o acessor quando (ax, ay) mudam. */
+/** reaplica o acessor quando (ax, ay) mudam */
 const refreshAnchors = (): void => { fX?.x((n) => n.ax); fY?.y((n) => n.ay); };
 let raf = 0;
-/** Raio de colisão no layout livre, em múltiplos do raio do nó. Maior = nós mais afastados entre si
- *  (os leques de externos deixam de virar manchas na visão geral). */
+/** raio de colisão no layout livre (múltiplo do raio do nó) */
 const COLISAO = 4;
 let collideScale = COLISAO;
 let extentFree = 1;
 
-/** Extensão da rede principal num layout (a escala de colisão acompanha o tamanho do desenho). */
 const extent = (m: LayoutMode): number => {
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   N.forEach((n) => {
@@ -35,7 +29,6 @@ const extent = (m: LayoutMode): number => {
   });
   return Math.max(x1 - x0, y1 - y0, 1);
 };
-/** Raio de colisão em unidades do mundo: o mesmo para todos os nós, como o tamanho desenhado. */
 const collideRadius = (): number => NODE_RADIUS * collideScale;
 
 function links(): Link[] {
@@ -67,7 +60,6 @@ function frame(): void {
   if (sim.alpha() > sim.alphaMin() || sim.alphaTarget() > 0) raf = requestAnimationFrame(frame);
 }
 
-/** Garante o laço de simulação rodando (opcionalmente reaquecendo). */
 function kick(alpha?: number): void {
   if (!sim || !display.physics) return;
   if (alpha !== undefined) sim.alpha(Math.max(sim.alpha(), alpha));
@@ -81,9 +73,7 @@ export function setPhysics(onOff: boolean): void {
   emit('view');
 }
 
-// ---- Arrastar nós ----
-// Os "satélites" de um nó (vizinhos de grau 1, como os orientandos externos em leque) acompanham o
-// arraste rigidamente; os demais vizinhos são puxados pelas arestas e voltam ao repouso ao soltar.
+// arrastar nós: vizinhos de grau 1 vão junto
 let sats: number[] = [];
 export function dragStart(i: number): void {
   const n = N[i]!;
@@ -108,7 +98,7 @@ export function dragEnd(i: number): void {
   if (sim && display.physics) { n.fx = null; n.fy = null; sim.alphaTarget(0); refreshAnchors(); }
 }
 
-// ---- Troca de layout: transição animada das posições ----
+// transição entre layouts
 let tween = 0;
 export function transitionLayout(m: LayoutMode, ms = 650): void {
   cancelAnimationFrame(tween);

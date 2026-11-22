@@ -1,4 +1,3 @@
-"""Modelos Pydantic da API: nós, arestas, atividades e detalhes de um pesquisador."""
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -29,13 +28,12 @@ class Edge(BaseModel):
     vetor_contagem: list[int] = Field(min_length=5, max_length=5)
     vetor_bruto: list[list[str]]
     soma_bruta: int
-    peso: float           # peso normalizado da colaboração, de 0 a 1 (engine/peso.py)
+    peso: float           # 0 a 1
 
 
 class PesoParametros(BaseModel):
-    """O que o frontend precisa para recalcular o peso no recorte (filtros de dimensão e período)."""
-    alfas: list[float]        # importância de cada dimensão, na ordem do vetor contagem (soma 1)
-    referencias: list[int]    # maior contagem de cada dimensão na rede inteira (base comum)
+    alfas: list[float]        # peso de cada dimensão
+    referencias: list[int]    # maior contagem de cada dimensão
 
 
 class Atividade(BaseModel):
@@ -44,9 +42,9 @@ class Atividade(BaseModel):
 
 
 class Graph(BaseModel):
-    nodes: list[Node]                 # rede principal de colaboração do IMC
+    nodes: list[Node]                 # rede principal
     edges: list[Edge]
-    sem_colaboracao: list[Node]       # pesquisadores sem colaboração direta com o IMC (só vértices, sem relações)
+    sem_colaboracao: list[Node]       # só vértices
     atividades: dict[str, Atividade]
     paleta: dict[str, str]
     cores_grupo: dict[str, str]

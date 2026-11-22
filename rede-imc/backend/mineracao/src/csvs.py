@@ -1,8 +1,4 @@
-"""Etapa 6: monta as linhas dos 4 datasets e grava os CSVs.
-
-Recebe a pasta de saída, os professores, os externos e a rede; grava em UTF-8 com BOM
-(para o Excel abrir com acentos), fim de linha '\\r\\n' e listas como JSON.
-"""
+# etapa 6: gera os CSVs (UTF-8 com BOM pro Excel abrir os acentos)
 import csv
 import json
 
@@ -33,7 +29,6 @@ OBSERVACAO_SEM_CV = ('sem currículo Lattes no zip; características individuais
 
 
 def gravar_csvs(pasta, professores, externos, rede):
-    """Monta e grava os 4 CSVs na pasta de saída."""
     pessoas = {'professores': {professor['id']: professor for professor in professores},
                'externos': externos}
     pasta.mkdir(parents=True, exist_ok=True)
@@ -47,7 +42,6 @@ def gravar_csvs(pasta, professores, externos, rede):
 
 
 def gravar_csv(caminho, colunas, linhas):
-    """Grava uma lista de dicionários como CSV (UTF-8 com BOM, aspas só quando necessário)."""
     with open(caminho, 'w', encoding='utf-8-sig', newline='') as arquivo:
         escritor = csv.DictWriter(arquivo, fieldnames=colunas, quoting=csv.QUOTE_MINIMAL)
         escritor.writeheader()
@@ -55,12 +49,11 @@ def gravar_csv(caminho, colunas, linhas):
 
 
 def em_json(valor):
-    """Recebe uma lista e devolve o texto JSON, mantendo acentos ('["ART-000001"]')."""
     return json.dumps(valor, ensure_ascii=False)
 
 
 def nome_de(pessoa, pessoas):
-    """Devolve o nome do professor; de um externo, o nome mais visto nos currículos."""
+    """nome do professor ou o nome mais visto do externo"""
     if pessoa.startswith('EXT-'):
         externo = pessoas['externos'].get(pessoa)
         return externo['nomes'].most_common(1)[0][0] if externo else pessoa
@@ -68,25 +61,22 @@ def nome_de(pessoa, pessoas):
 
 
 def instituto_de(pessoa, pessoas):
-    """Devolve a sigla do instituto; externos são 'EXT'."""
     if pessoa.startswith('EXT-'):
         return 'EXT'
     return pessoas['professores'][pessoa]['instituto']
 
 
 def area_de(pessoa, pessoas):
-    """Devolve a área de atuação do professor; externos não têm área conhecida."""
     if pessoa.startswith('EXT-'):
         return ''
     return pessoas['professores'][pessoa]['area']
 
 
 def linhas_completo(professores):
-    """dataset_completo_UNIFEI: todos os professores, ordenados por instituto e nome."""
     decorados = []
     for ordem, professor in enumerate(professores):
         decorados.append((professor['instituto'], normalizar(professor['nome']), ordem, professor))
-    decorados.sort()  # 'ordem' desempata; o dicionário nunca chega a ser comparado
+    decorados.sort()  # 'ordem' desempata
     linhas = []
     for _, _, _, professor in decorados:
         linhas.append({'pesquisador_id': professor['id'], 'nome': professor['nome'],
@@ -96,7 +86,6 @@ def linhas_completo(professores):
 
 
 def linhas_entrada(rede, pessoas):
-    """dataset_entrada: um vértice por pesquisador da rede com os códigos das suas atividades."""
     individuais = atividades_individuais(rede)
     com_relacao = {pessoa for pessoa, _ in rede['pares']}
     linhas = []
@@ -115,7 +104,6 @@ def linhas_entrada(rede, pessoas):
 
 
 def atividades_individuais(rede):
-    """Devolve {id: {dimensão: [códigos]}} dos professores da camada e de outros institutos."""
     professores_da_rede = set(rede['membros']) | set(rede['outros'])
     individuais = {}
     for atividade in rede['selecionadas']:
@@ -129,7 +117,7 @@ def atividades_individuais(rede):
 
 
 def preencher_atividades(linha, pessoa, individuais, pessoas):
-    """Preenche as colunas das dimensões (vazias sem currículo, nunca zero); devolve observações."""
+    """sem currículo as colunas ficam vazias (nunca zero)"""
     if pessoa.startswith('EXT-'):
         deixar_vazias(linha)
         return [OBSERVACAO_EXTERNO]
@@ -145,14 +133,12 @@ def preencher_atividades(linha, pessoa, individuais, pessoas):
 
 
 def deixar_vazias(linha):
-    """Deixa vazias as colunas das dimensões e o vetor contagem."""
     for dim in DIMENSOES:
         linha[COLUNA_DA_DIMENSAO[dim]] = ''
     linha['vetor contagem'] = ''
 
 
 def linhas_saida(rede, pessoas):
-    """dataset_saida: uma linha por par (pesquisador 1 sempre da camada) com o vetor bruto."""
     linhas = []
     for (pessoa, parceiro), por_dimensao in pares_ordenados(rede, pessoas):
         vetor = vetor_bruto(por_dimensao)
@@ -172,7 +158,7 @@ def linhas_saida(rede, pessoas):
 
 
 def pares_ordenados(rede, pessoas):
-    """Ordena por nome do pesquisador 1; depois parceiros da camada, de outros e externos."""
+    """por nome do pesquisador 1, depois camada, outros e externos"""
     decorados = []
     for ordem, (par, por_dimensao) in enumerate(rede['pares'].items()):
         pessoa, parceiro = par
@@ -180,12 +166,11 @@ def pares_ordenados(rede, pessoas):
         nome_1 = normalizar(nome_de(pessoa, pessoas))
         nome_2 = normalizar(nome_de(parceiro, pessoas))
         decorados.append(((nome_1, grupo, nome_2, ordem), par, por_dimensao))
-    decorados.sort()  # a chave termina na ordem original, então nunca há empate
+    decorados.sort()  # nunca empata
     return [(par, por_dimensao) for _, par, por_dimensao in decorados]
 
 
 def linhas_atividades(rede, pessoas):
-    """dataset_atividades: uma linha por atividade única, com participantes e fontes."""
     membros = set(rede['membros'])
     linhas = []
     for atividade in rede['selecionadas']:
@@ -208,7 +193,6 @@ def linhas_atividades(rede, pessoas):
 
 
 def dados_da_atividade(atividade):
-    """Devolve as colunas que vêm direto da atividade (sem consultar as pessoas)."""
     nao_resolvidos = []
     for nao_resolvido in atividade['nao_resolvidos']:
         if nao_resolvido['motivo'] != 'aluno_sem_lattes':
@@ -230,7 +214,7 @@ def dados_da_atividade(atividade):
 
 
 def juntar_conjuntos(atividade, ids, campo):
-    """Devolve os papéis (ou métodos) de cada participante: 'autor/membro;orientador'."""
+    """ex: 'autor/membro;orientador'"""
     textos = []
     for pessoa in ids:
         textos.append('/'.join(sorted(atividade['participantes'][pessoa][campo])))
@@ -238,6 +222,6 @@ def juntar_conjuntos(atividade, ids, campo):
 
 
 def formatar_fonte(fonte):
-    """Recebe '<id>|<subtipo>|item <n>' e devolve '<id>:<subtipo>#<n>'."""
+    """'<id>|<subtipo>|item <n>' -> '<id>:<subtipo>#<n>'"""
     dono, subtipo, numero = fonte.split('|')
     return f"{dono}:{subtipo}#{numero.replace('item ', '')}"

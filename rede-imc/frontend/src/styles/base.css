@@ -1,7 +1,4 @@
-/* Base: variáveis do tema, reset, tipografia e utilitários globais.
-   Tema claro por padrão e escuro via prefers-color-scheme.
-   --cv = fundo do canvas, --pn = barras laterais, --pn2 = superfícies elevadas (inputs, trilhas, hover),
-   --d0..--d4 = cores das 5 dimensões de colaboração. */
+/* --cv canvas, --pn painéis, --pn2 superfícies, --d0..--d4 dimensões */
 
 :root {
   --bg: #fafafa;
@@ -94,7 +91,7 @@ a {
   font-variant-numeric: tabular-nums;
 }
 
-/* Bolinha de cor (instituto, área ou dimensão) */
+/* bolinha de cor */
 .sw {
   width: 11px;
   height: 11px;
@@ -102,13 +99,13 @@ a {
   flex: none;
 }
 
-/* Contador alinhado à direita de uma linha */
+/* contador */
 .cnt {
   margin-left: auto;
   color: var(--mu);
 }
 
-/* Linhas clicáveis: resultados da busca e listas do painel de detalhes */
+/* linhas clicáveis */
 .res div,
 .li div {
   padding: 4px 6px;

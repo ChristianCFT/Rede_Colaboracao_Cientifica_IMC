@@ -1,5 +1,4 @@
-// Busca por nome (com navegação por teclado). Pesquisadores sem colaboração com o IMC só entram nos
-// resultados quando a rede ampliada está visível.
+// busca por nome
 import { $, esc } from '../../core/dom';
 import { N } from '../../core/model';
 import { extended } from '../../core/state';

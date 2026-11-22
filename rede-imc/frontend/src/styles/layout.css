@@ -1,5 +1,3 @@
-/* Estrutura da aplicação: barra lateral esquerda | área do grafo | painel de detalhes. */
-
 body {
   display: flex;
 }
@@ -28,7 +26,7 @@ main {
   background: var(--cv);
 }
 
-/* Tela de carregamento / erro exibida antes do grafo */
+/* tela de carregamento */
 .boot {
   position: fixed;
   inset: 0;

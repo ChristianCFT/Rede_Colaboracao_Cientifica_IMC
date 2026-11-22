@@ -1,6 +1,4 @@
-// Contexto de um quadro de desenho e o "holofote" (destaque): com o mouse sobre um nó, ele, os
-// vizinhos diretos e as arestas entre eles ficam em evidência e o restante é apagado; sem hover,
-// o mesmo vale para o nó ou a aresta selecionados.
+// destaque: nó em foco, vizinhos e arestas entre eles; o resto fica apagado
 import { E, N } from '../../core/model';
 import { selection } from '../../core/state';
 import type { View } from '../../core/selectors';
@@ -9,13 +7,11 @@ import type { GEdge } from '../../core/types';
 export interface Theme { tx: string; bg: string }
 
 export interface Focus {
-  /** Há algo em destaque? */
   active: boolean;
-  /** O destaque vem do hover (e não da seleção). */
   hover: boolean;
   node: number;
   edge: number;
-  /** 1 para o nó em foco, seus vizinhos visíveis e as pontas da aresta em foco. */
+  /** 1 = em foco */
   near: Uint8Array;
 }
 
@@ -26,7 +22,6 @@ export interface Frame {
   view: View;
   focus: Focus;
   theme: Theme;
-  /** Raio dos nós na tela neste quadro (fixo; varia só com o zoom). */
   r: number;
 }
 
@@ -44,6 +39,5 @@ export function computeFocus(v: View): Focus {
   return { active: node >= 0 || edge >= 0, hover, node, edge, near };
 }
 
-/** Aresta ligada ao nó em foco (ou a própria aresta em foco). */
 export const isHighlighted = (f: Focus, e: GEdge): boolean =>
   (f.node >= 0 && (e.a === f.node || e.b === f.node)) || e.i === f.edge;

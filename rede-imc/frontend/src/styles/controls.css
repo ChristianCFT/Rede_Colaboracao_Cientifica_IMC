@@ -1,5 +1,3 @@
-/* Controles: campo de busca, checkboxes/radios, botões e sliders. */
-
 input[type=text] {
   width: 100%;
   padding: 7px 9px;
@@ -9,7 +7,7 @@ input[type=text] {
   color: var(--tx);
 }
 
-/* Linha com checkbox ou radio; .zero = item sem nada no recorte atual */
+/* .zero = sem nada no recorte */
 label.r {
   display: flex;
   align-items: center;
@@ -38,7 +36,7 @@ input:focus-visible {
   outline-offset: 1px;
 }
 
-/* Botão com aparência de link (ex.: "Limpar" filtros) */
+/* botão tipo link */
 .lnk {
   padding: 0;
   border: 0;
@@ -52,8 +50,7 @@ input:focus-visible {
   text-decoration: underline;
 }
 
-/* Sliders: mesma aparência para o simples e o duplo (reproduz o controle nativo azul).
-   A trilha (.trk) e o preenchimento (.fill) são elementos próprios; o input fica transparente por cima. */
+/* sliders: trilha e preenchimento próprios, input transparente por cima */
 .sl {
   position: relative;
   height: 16px;
@@ -148,7 +145,7 @@ input:focus-visible {
   box-shadow: 0 0 0 2px var(--pn), 0 0 0 4px var(--ac);
 }
 
-/* Anos mínimo e máximo abaixo do slider duplo */
+/* anos do slider duplo */
 .ends {
   display: flex;
   justify-content: space-between;

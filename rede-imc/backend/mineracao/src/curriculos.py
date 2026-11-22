@@ -1,8 +1,4 @@
-"""Etapa 2: percorre o HTML do Lattes de cada professor e despacha cada item para sua dimensão.
-
-Recebe os professores e o índice de identificação; devolve a lista de itens brutos (um por
-registro lido nos currículos, ainda com repetições entre coautores).
-"""
+# etapa 2: lê o HTML do Lattes de cada professor
 import html
 import re
 
@@ -16,31 +12,28 @@ from src import dimensoes
 from src.identificacao import chaves_do_dono
 from src.textos import ler_html, limpar_espacos, normalizar
 
-# O HTML do Lattes é uma lista longa de <div> irmãs: 'title-wrapper' (seção, com um <h1>),
-# 'inst_back' (bloco), 'cita-artigos' (subseção) e 'layout-cell-11' (um item). Como a página
-# não aninha os itens dentro das seções, o laço guarda em três variáveis "onde estamos".
+# o HTML do Lattes não aninha os itens nas seções, então o laço vai guardando
+# a seção, o bloco e a subseção atual
 
-# Captura o Lattes iD de 16 dígitos no link de um coautor.
+# Lattes iD do coautor
 LINK_DO_LATTES = re.compile(r'lattes\.cnpq\.br/(\d{16})')
-# Captura o prefixo de link no ícone de DOI do item.
+# link do DOI
 LINK_DO_DOI = re.compile(r'^https?://(dx\.)?doi\.org/', re.I)
 
 
 def extrair_itens(professores, indice):
-    """Recebe os professores e o índice e devolve todos os itens lidos dos currículos."""
     itens = []
     for professor in professores:
         if professor['html'] is None:
             continue
         try:
             extrair_curriculo(professor, indice, itens)
-        except Exception as erro:  # um currículo problemático não interrompe a execução
+        except Exception as erro:  # não para tudo por causa de um currículo
             print(f"   aviso: falha ao ler {professor['html'].name}: {erro}")
     return itens
 
 
 def extrair_curriculo(professor, indice, itens):
-    """Lê um currículo e acrescenta à lista 'itens' cada item reconhecido, na ordem do HTML."""
     sopa = BeautifulSoup(ler_html(professor['html']), 'lxml')
     chaves_dono = chaves_do_dono(professor)
     secao = bloco = subsecao = ''
@@ -72,7 +65,7 @@ def extrair_curriculo(professor, indice, itens):
 
 
 def classificar(secao, bloco, subsecao):
-    """Recebe onde o item está (seção, bloco, subseção) e devolve (dimensão, subtipo) ou Nones."""
+    """devolve (dimensão, subtipo) ou (None, None)"""
     if secao == SECAO_PRODUCOES and subsecao in SUBSECOES_ARTIGOS:
         return 'ART', SUBSECOES_ARTIGOS[subsecao]
     if secao == SECAO_PRODUCOES and subsecao in SUBSECOES_PRODUCAO_TECNICA:
@@ -89,14 +82,13 @@ def classificar(secao, bloco, subsecao):
 
 
 def extrair_item(elemento, dim, subtipo, numero, professor, chaves_dono, indice):
-    """Recebe a div de um item e devolve o item já com título, ano e participantes."""
     texto, ano_oculto, cvuri, negritos = ler_texto_do_item(elemento)
     links = ler_links_lattes(elemento)
     doi = ler_doi(elemento)
     fonte = f"{professor['id']}|{subtipo}|item {numero}"
     item = dimensoes.novo_item(dim, subtipo, fonte, professor['id'], doi,
                                texto[:TAMANHO_MAXIMO_DO_TEXTO])
-    # O nome em negrito no item é sempre o dono do currículo, do jeito que ele assina.
+    # nome em negrito = dono do currículo
     chaves = chaves_dono | negritos
     if dim == 'ART':
         dimensoes.extrair_artigo(item, texto, cvuri, ano_oculto, links, professor, chaves, indice)
@@ -111,9 +103,8 @@ def extrair_item(elemento, dim, subtipo, numero, professor, chaves_dono, indice)
 
 
 def ler_texto_do_item(elemento):
-    """Recebe a div do item e devolve (texto visível, ano oculto, cvuri, nomes em negrito)."""
-    # Os spans 'informacao-artigo' só servem para o site ordenar a lista e sujariam o texto
-    # ('BRAUN, F. 2026 BRAUN, F. ; ...'): o ano é lido deles e depois eles são apagados.
+    """devolve (texto, ano, cvuri, nomes em negrito)"""
+    # os spans 'informacao-artigo' sujam o texto, pega o ano e remove eles
     span_ano = elemento.find('span', attrs={'data-tipo-ordenacao': 'ano'})
     ano_oculto = span_ano.get_text().strip() if span_ano else ''
     citado = elemento.find('span', class_='citado')
@@ -131,7 +122,7 @@ def ler_texto_do_item(elemento):
 
 
 def ler_links_lattes(elemento):
-    """Recebe a div do item e devolve {nome normalizado: Lattes iD} dos coautores com link."""
+    """{nome normalizado: Lattes iD} dos coautores com link"""
     links = {}
     for link in elemento.find_all('a'):
         achado = LINK_DO_LATTES.search(link.get('href') or '')
@@ -141,7 +132,6 @@ def ler_links_lattes(elemento):
 
 
 def ler_doi(elemento):
-    """Recebe a div do item e devolve o DOI do ícone de DOI ('' se não houver)."""
     icone = elemento.find('a', class_='icone-doi')
     if not icone or not icone.get('href'):
         return ''

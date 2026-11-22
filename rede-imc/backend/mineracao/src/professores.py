@@ -1,8 +1,4 @@
-"""Etapa 1: monta a lista de professores a partir dos índices .txt, das pastas e do cabeçalho do CV.
-
-Recebe o ZIP com os currículos (ou a pasta já extraída) e devolve um dicionário por pasta de
-professor, já com o id (SIAPE) que identifica a pessoa em todos os datasets.
-"""
+# etapa 1: monta a lista de professores (índices, pastas e cabeçalho do CV)
 import datetime
 import re
 import zipfile
@@ -14,26 +10,15 @@ from src.indices import ler_indices_do_instituto
 from src.textos import (chave_ordenacao, corrigir_escapes, hash_curto, ler_html, limpar_espacos,
                         normalizar, normalizar_sem_particulas)
 
-# Cada professor é um dicionário com as chaves:
-#   id           SIAPE; sem SIAPE, 'PROV-L' + Lattes iD ou 'PROV-N' + hash do nome
-#   nome         nome do currículo, senão do índice, senão da pasta
-#   instituto    sigla oficial (IMC, IFQ, ...)          pasta   nome da pasta no ZIP
-#   html         caminho do HTML escolhido (None se a pasta não tem currículo)
-#   lattes       Lattes iD de 16 dígitos ('' se desconhecido)
-#   citacoes     formas de citação declaradas no CV     area    'Grande área / Área; ...'
-#   siape, nome_indice, url_lattes    dados do índice .txt ('' se a pasta não casou)
-#   registro     o registro do índice usado (ou None); nome_cv, lattes_cv, areas, atualizacao
+# id do professor é o SIAPE; sem SIAPE usa 'PROV-L' + Lattes ou 'PROV-N' + hash do nome
 
-# Captura o link completo do Lattes que já vem escrito no índice.
 LINK_LATTES = re.compile(r'https?://lattes\.cnpq\.br/\d{16}')
-# Captura 16 dígitos seguidos (o Lattes iD no bloco 'Identificação').
+# Lattes iD no bloco Identificação
 DEZESSEIS_DIGITOS = re.compile(r'(\d{16})')
-# Captura a data de atualização do currículo.
 ATUALIZACAO = re.compile(r'Última atualização do currículo em (\d{2}/\d{2}/\d{4})')
-# Captura o Lattes iD no rodapé 'Endereço para acessar este CV'.
+# Lattes iD no rodapé do CV
 ENDERECO_DO_CV = re.compile(
     r'Endereço para acessar este CV:\s*(?:<[^>]+>)?\s*https?://lattes\.cnpq\.br/(\d{16})')
-# Captura a grande área e a área de uma linha de 'Áreas de atuação'.
 GRANDE_AREA = re.compile(r'Grande área:\s*([^/]+?)\s*/')
 AREA = re.compile(r'/\s*Área:\s*([^/]+?)\s*(?:/|\.\s*$|$)')
 LINK_LATTES_PADRAO = 'http://lattes.cnpq.br/'
@@ -41,7 +26,6 @@ LINK_LATTES_ANTIGO = 'http://buscatextual.cnpq.br/buscatextual/visualizacv.do?id
 
 
 def carregar_professores(raiz):
-    """Recebe a pasta com os institutos e devolve a lista de professores com id."""
     professores, registros = [], []
     for pasta_instituto, sigla in listar_institutos(raiz):
         registros_instituto = ler_indices_do_instituto(pasta_instituto, sigla)
@@ -58,11 +42,10 @@ def carregar_professores(raiz):
 
 
 def abrir_entrada(caminho):
-    """Recebe o ZIP (ou uma pasta já extraída) e devolve a pasta com as pastas dos institutos."""
     pasta = caminho
     if not caminho.is_dir():
         pasta = PASTA_TEMPORARIOS / caminho.stem
-        # Extrai só na primeira vez; se a extração for interrompida, apague a pasta e rode de novo.
+        # só extrai na primeira vez (se der erro no meio, apaga a pasta e roda de novo)
         if not pasta.exists():
             print(f'   extraindo {caminho.name} em {pasta} ...')
             with zipfile.ZipFile(caminho) as arquivo_zip:
@@ -74,12 +57,11 @@ def abrir_entrada(caminho):
 
 
 def primeira_palavra(nome_pasta):
-    """Recebe 'IMC - Instituto de ...' e devolve 'IMC' (a chave de SIGLA_POR_PASTA)."""
+    """'IMC - Instituto de ...' -> 'IMC'"""
     return corrigir_escapes(nome_pasta).strip().split(' ')[0].strip()
 
 
 def listar_institutos(raiz):
-    """Recebe a pasta raiz e devolve [(pasta do instituto, sigla)] em ordem estável."""
     institutos = []
     for pasta in listar_subpastas(raiz):
         palavra = primeira_palavra(pasta.name)
@@ -91,18 +73,15 @@ def listar_institutos(raiz):
 
 
 def listar_subpastas(pasta):
-    """Recebe uma pasta e devolve as subpastas ordenadas por chave_ordenacao."""
     subpastas = [item for item in pasta.iterdir() if item.is_dir()]
     return sorted(subpastas, key=chave_do_caminho)
 
 
 def chave_do_caminho(caminho):
-    """Recebe um caminho e devolve a chave de ordenação do seu nome."""
     return chave_ordenacao(caminho.name)
 
 
 def montar_professor(pasta, sigla, registros_instituto):
-    """Recebe a pasta de um professor e devolve o professor com o índice e o cabeçalho do CV."""
     nome_pasta = corrigir_escapes(pasta.name).strip()
     candidatos = []
     for registro in registros_instituto:
@@ -121,19 +100,19 @@ def montar_professor(pasta, sigla, registros_instituto):
 
 
 def escolher_html(htmls, lattes_indice):
-    """Recebe os HTMLs de uma pasta e devolve (html escolhido, cabeçalho): um CV por professor."""
+    """um CV por professor"""
     if not htmls:
         return None, cabecalho_vazio()
     lidos = []
     for html in htmls:
         try:
             lidos.append((html, ler_cabecalho(html), True))
-        except Exception:  # um currículo corrompido não interrompe a execução
+        except Exception:  # não para tudo por causa de um arquivo
             lidos.append((html, cabecalho_vazio(), False))
     if len(lidos) == 1:
         return lidos[0][0], lidos[0][1]
     validos = [lido for lido in lidos if lido[2]] or lidos
-    # Critérios, em ordem: Lattes iD igual ao do índice, atualização mais recente, maior arquivo.
+    # prioridade: mesmo Lattes do índice, mais recente, maior arquivo
     escolhido, melhor_chave = None, None
     for html, cabecalho, _ in validos:
         mesmo_lattes = bool(lattes_indice) and cabecalho['lattes_cv'] == lattes_indice
@@ -144,12 +123,11 @@ def escolher_html(htmls, lattes_indice):
 
 
 def cabecalho_vazio():
-    """Devolve o cabeçalho de quem não tem currículo legível."""
     return {'nome_cv': '', 'citacoes': [], 'lattes_cv': '', 'areas': [], 'atualizacao': ''}
 
 
 def ler_data(texto):
-    """Recebe '31/12/2025' e devolve a data; vazio ou inválido vira a menor data possível."""
+    """'31/12/2025' -> data; inválido vira a menor data"""
     try:
         return datetime.datetime.strptime(texto, '%d/%m/%Y')
     except (TypeError, ValueError):
@@ -157,7 +135,6 @@ def ler_data(texto):
 
 
 def ler_cabecalho(html):
-    """Recebe o caminho do CV e devolve nome, citações, Lattes iD, áreas e data de atualização."""
     texto = ler_html(html)
     sopa = BeautifulSoup(texto, 'lxml')
     cabecalho = cabecalho_vazio()
@@ -184,7 +161,6 @@ def ler_cabecalho(html):
 
 
 def ler_areas(bloco, cabecalho):
-    """Recebe o bloco 'Áreas de atuação' e acrescenta cada linha não vazia ao cabeçalho."""
     for celula in bloco.find_all('div', class_='layout-cell-9'):
         area = limpar_espacos(celula.get_text(' '))
         if area:
@@ -192,8 +168,7 @@ def ler_areas(bloco, cabecalho):
 
 
 def ler_identificacao(bloco, cabecalho):
-    """Recebe o bloco 'Identificação' e preenche nome, citações e Lattes iD no cabeçalho."""
-    # O bloco é uma lista de células: um rótulo ('Nome', 'Lattes iD'...) e, logo depois, o valor.
+    # rótulo seguido do valor
     celulas = bloco.find_all('div', class_='layout-cell-pad-5')
     for i in range(len(celulas) - 1):
         rotulo = limpar_espacos(celulas[i].get_text(' '))
@@ -209,7 +184,7 @@ def ler_identificacao(bloco, cabecalho):
 
 
 def casar_sem_particulas(professor, registros):
-    """Segunda tentativa de achar o professor no índice: nome sem partículas e sem acentos."""
+    """segunda tentativa: nome sem partículas e acentos"""
     soltos = []
     for registro in registros:
         if not registro['usado'] and registro['sigla'] == professor['instituto']:
@@ -223,7 +198,6 @@ def casar_sem_particulas(professor, registros):
 
 
 def registros_com_nome(registros, nome):
-    """Recebe registros e um nome e devolve os registros com o mesmo nome sem partículas."""
     alvo = normalizar_sem_particulas(nome)
     iguais = []
     for registro in registros:
@@ -233,7 +207,6 @@ def registros_com_nome(registros, nome):
 
 
 def completar_professor(professor):
-    """Preenche id, nome, SIAPE, Lattes, área e URL do Lattes a partir do índice e do CV."""
     registro = professor['registro'] or {'nome': '', 'lattes': '', 'lattes_k': '', 'siape': '',
                                          'texto': ''}
     professor['siape'] = registro['siape']
@@ -251,7 +224,6 @@ def completar_professor(professor):
 
 
 def formatar_areas(areas):
-    """Recebe as linhas de 'Áreas de atuação' e devolve 'Grande área / Área' únicos, com '; '."""
     vistos = []
     for linha in areas:
         grande, area = GRANDE_AREA.search(linha), AREA.search(linha)
@@ -264,7 +236,7 @@ def formatar_areas(areas):
 
 
 def montar_url_lattes(registro, lattes):
-    """Devolve o link do índice; senão o link pelo Lattes iD; senão o link antigo 'K...'."""
+    """link do índice, senão pelo Lattes iD, senão o antigo 'K...'"""
     achado = LINK_LATTES.search(registro['texto'])
     if achado:
         return achado.group(0)
@@ -276,7 +248,7 @@ def montar_url_lattes(registro, lattes):
 
 
 def conferir_ids_unicos(professores):
-    """Para a execução se dois professores ficarem com o mesmo id (nunca deveria acontecer)."""
+    """para se dois professores tiverem o mesmo id"""
     vistos = set()
     for professor in professores:
         if professor['id'] in vistos:

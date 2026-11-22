@@ -1,5 +1,4 @@
-// Painel de uma aresta: todas as colaborações da dupla, agrupadas por dimensão e da mais recente
-// para a mais antiga. Itens fora do recorte atual (dimensão desligada ou fora da janela) ficam esmaecidos.
+// painel da aresta: colaborações por dimensão, mais recentes primeiro
 import { esc, fmt } from '../../core/dom';
 import { A, CODE, CODE_YEAR, DIM_LONG, E, dimCol } from '../../core/model';
 import { getView } from '../../core/selectors';

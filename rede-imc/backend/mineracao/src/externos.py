@@ -1,8 +1,4 @@
-"""Etapa 3 (fim): externos que na verdade são professores, com dois ids ou com o nome do meio faltando.
-
-Recebe os itens, os professores e o índice com os externos criados na leitura; corrige os
-participantes dos itens no lugar.
-"""
+# etapa 3: corrige externos que são professores, duplicados ou com nome do meio faltando
 import re
 
 from configuracao import COAUTORES_EM_COMUM_PARA_JUNTAR
@@ -10,17 +6,13 @@ from src.identificacao import esta_abreviado
 from src.textos import PARTICULAS, forma_natural, normalizar, normalizar_sem_particulas
 
 SUFIXOS_DE_NOME = {'JUNIOR', 'JR', 'FILHO', 'NETO', 'SOBRINHO'}
-# Captura qualquer letra seguida de ponto (sinal de que o nome está abreviado).
+# letra seguida de ponto = nome abreviado
 LETRA_COM_PONTO = re.compile(r'\b\w\.')
-# Método gravado quando um externo vira professor.
 METODO_TROCA = 'lattes_id+nome_completo'
 
 
 def corrigir_externos(itens, professores, indice):
-    """Troca externos pelo professor certo ou os retira para revisão, em todos os itens."""
-    # Evidência forte (Lattes iD desconhecido + nome completo de um professor sem Lattes):
-    # o externo vira o professor. Nome só compatível: o nome vai para 'possivel_professor'.
-    # Nunca se juntam pessoas só porque os nomes se parecem.
+    # só troca com evidência forte (Lattes + nome completo); nome parecido vai pra revisão
     trocas, suspeitos = encontrar_trocas(professores, indice['externos'])
     encontrar_suspeitos(professores, indice['externos'], trocas, suspeitos)
     for item in itens:
@@ -28,7 +20,6 @@ def corrigir_externos(itens, professores, indice):
 
 
 def aplicar_trocas(item, trocas, suspeitos):
-    """Corrige os participantes de um item e deixa cada pessoa uma vez só."""
     novos = []
     for participante in item['participantes']:
         if participante['id'] in trocas:
@@ -43,7 +34,7 @@ def aplicar_trocas(item, trocas, suspeitos):
 
 
 def sem_repetidos(participantes):
-    """Deixa cada pessoa uma vez só no item (vale a primeira vez que ela aparece)."""
+    """vale a primeira vez que aparece"""
     unicos, vistos = [], set()
     for participante in participantes:
         if participante['id'] not in vistos:
@@ -53,7 +44,7 @@ def sem_repetidos(participantes):
 
 
 def encontrar_trocas(professores, externos):
-    """Devolve ({EXT-L: id do professor}, {EXT-L suspeitos}) pelo nome completo dos professores."""
+    """devolve ({EXT-L: professor}, {EXT-L suspeitos})"""
     ids = {professor['id']: professor for professor in professores}
     por_nome = professores_por_nome(professores)
     candidatos, suspeitos = {}, set()
@@ -71,7 +62,7 @@ def encontrar_trocas(professores, externos):
             suspeitos.add(identificador)
     trocas = {}
     for professor, lista in candidatos.items():
-        # Dois Lattes para o mesmo nome: fica o mais frequente; o outro vai para revisão.
+        # dois Lattes pro mesmo nome: fica o mais frequente
         ordenados = []
         for ordem, identificador in enumerate(lista):
             vezes = sum(externos[identificador]['nomes'].values())
@@ -84,7 +75,6 @@ def encontrar_trocas(professores, externos):
 
 
 def professores_por_nome(professores):
-    """Devolve {nome sem partículas: {ids}} com nome do CV, da pasta e do índice."""
     por_nome = {}
     for professor in professores:
         for nome in (professor['nome'], professor['pasta'], professor['nome_indice']):
@@ -94,7 +84,6 @@ def professores_por_nome(professores):
 
 
 def encontrar_suspeitos(professores, externos, trocas, suspeitos):
-    """Acrescenta aos suspeitos os externos cujo nome é compatível com algum professor."""
     trocados = set(trocas.values())
     palavras_professor = {}
     sem_lattes = []
@@ -105,8 +94,7 @@ def encontrar_suspeitos(professores, externos, trocas, suspeitos):
     for identificador, externo in externos.items():
         if identificador in trocas or identificador in suspeitos:
             continue
-        # Cada variante do nome é normalizada uma vez só (antes era uma vez por professor:
-        # era o maior gasto de tempo no cProfile).
+        # normaliza cada variante uma vez só (tava lento)
         variantes = []
         for nome in externo['nomes']:
             variantes.append((nome, normalizar_sem_particulas(forma_natural(nome)).split()))
@@ -121,7 +109,7 @@ def encontrar_suspeitos(professores, externos, trocas, suspeitos):
 
 
 def externo_compativel(identificador, variantes, palavras_professor):
-    """EXT-L: todas as variantes batem com o professor; EXT-N: basta uma bater pelo nome."""
+    """EXT-L: todas as variantes batem; EXT-N: basta uma"""
     if identificador.startswith('EXT-N'):
         for _, palavras in variantes:
             if compativel_com_nome_completo(palavras, palavras_professor):
@@ -137,7 +125,6 @@ def externo_compativel(identificador, variantes, palavras_professor):
 
 
 def compativel_com_nome_completo(palavras, palavras_professor):
-    """Mesmo primeiro nome e (mesmo último nome ou um conjunto de palavras contido no outro)."""
     if len(palavras) < 2 or len(palavras_professor) < 2:
         return False
     if palavras[0] != palavras_professor[0]:
@@ -149,7 +136,7 @@ def compativel_com_nome_completo(palavras, palavras_professor):
 
 
 def compativel_com_abreviacao(citacao, palavras_professor):
-    """'SILVA, J. C.' bate com 'João Carlos Silva': sobrenome presente e iniciais na ordem."""
+    """'SILVA, J. C.' bate com 'João Carlos Silva'"""
     if not palavras_professor:
         return False
     sobrenomes, iniciais = separar_sobrenome_e_iniciais(citacao)
@@ -161,7 +148,7 @@ def compativel_com_abreviacao(citacao, palavras_professor):
             resto.append(palavra)
     if not resto or not inicial_bate(iniciais[0], resto[0]):
         return False
-    # As demais iniciais precisam aparecer depois, na mesma ordem, entre os prenomes.
+    # as outras iniciais na mesma ordem
     posicao = 1
     for inicial in iniciais[1:]:
         while posicao < len(resto) and not inicial_bate(inicial, resto[posicao]):
@@ -173,7 +160,7 @@ def compativel_com_abreviacao(citacao, palavras_professor):
 
 
 def separar_sobrenome_e_iniciais(citacao):
-    """Recebe 'SILVA, J. C.' (ou 'J. C. Silva') e devolve (['SILVA'], ['J', 'C'])."""
+    """'SILVA, J. C.' -> (['SILVA'], ['J', 'C'])"""
     if ',' in citacao:
         sobrenome, prenomes = citacao.split(',', 1)
     else:
@@ -193,20 +180,16 @@ def separar_sobrenome_e_iniciais(citacao):
 
 
 def inicial_bate(inicial, palavra):
-    """Uma letra bate com a palavra que começa por ela; um prenome inteiro precisa ser igual."""
     if len(inicial) > 1:
         return palavra == inicial
     return palavra[0] == inicial
 
 
-# ------------------------------------------------------------------- mesmo externo com dois ids
+# mesmo externo com dois ids
 def unificar_externos_por_nome(itens, indice):
-    """Troca cada EXT-N pelo EXT-L da mesma pessoa; devolve (quantos juntou, avisos)."""
-    # A mesma pessoa vira EXT-L num currículo (com link do Lattes) e EXT-N em outro (só o nome).
-    # O Lattes é a identificação mais confiável: se o nome completo do EXT-N pertence a um único
-    # EXT-L, o EXT-N passa a ser o EXT-L. Nome de dois EXT-L não junta. Lattes suspeito fica
-    # fora da comparação. Os dois casos viram aviso para revisão. Nome abreviado nunca junta.
-    # Esta é a única junção de externos por nome: depois daqui nenhuma etapa troca ids.
+    """troca EXT-N pelo EXT-L da mesma pessoa"""
+    # só junta se o nome completo for de um único EXT-L, nome abreviado nunca junta.
+    # depois daqui ninguém mais troca id
     externos = indice['externos']
     em_uso = sorted(ids_dos_participantes(itens))
     lattes_por_nome, avisos = {}, []
@@ -238,7 +221,6 @@ def unificar_externos_por_nome(itens, indice):
 
 
 def trocar_ids(itens, externos, trocas):
-    """Aplica as junções {id que sai: id que fica}: soma os nomes vistos e troca o id nos itens."""
     for antigo, novo in trocas.items():
         externos[novo]['nomes'].update(externos.pop(antigo)['nomes'])
     for item in itens:
@@ -248,7 +230,6 @@ def trocar_ids(itens, externos, trocas):
 
 
 def ids_dos_participantes(itens):
-    """Devolve o conjunto de ids que aparecem nos itens."""
     ids = set()
     for item in itens:
         for participante in item['participantes']:
@@ -257,8 +238,7 @@ def ids_dos_participantes(itens):
 
 
 def nomes_completos(externo):
-    """Devolve os nomes completos (sem abreviação) já vistos do externo, na ordem natural."""
-    # Sem partículas, como no id EXT-N: 'Carolina de Aguiar Ferreira' = 'Carolina Aguiar Ferreira'.
+    # sem partículas, igual ao id EXT-N
     nomes = set()
     for nome in externo['nomes']:
         chave = normalizar_sem_particulas(forma_natural(nome))
@@ -268,9 +248,8 @@ def nomes_completos(externo):
 
 
 def lattes_suspeito(nomes):
-    """Dois nomes completos do mesmo Lattes sem nenhuma palavra em comum: são pessoas diferentes."""
-    # Acontece quando o link do Lattes de um item está errado (o mesmo link em vários coautores).
-    # Variações da mesma pessoa sempre dividem alguma palavra ('TIAGO FILHO', 'GERALDO TIAGO FILHO').
+    """mesmo Lattes com nomes sem nenhuma palavra em comum = pessoas diferentes"""
+    # acontece quando o link do Lattes do item está errado
     palavras = []
     for nome in sorted(nomes):
         palavras.append(set(nome.split()) - PARTICULAS)
@@ -281,13 +260,10 @@ def lattes_suspeito(nomes):
     return False
 
 
-# ------------------------------------------------------------------- nome do meio faltando
+# nome do meio faltando
 def unificar_nomes_do_meio(itens, indice):
-    """Junta o externo cujo nome é o de outro sem algum nome do meio; devolve (quantos juntou, avisos)."""
-    # 'Jorge Sotomayor Tello' e 'Jorge Manuel Sotomayor Tello' são a mesma pessoa quando: mesmo
-    # primeiro e último nome, todas as palavras do nome curto estão no longo, nenhum é abreviado
-    # e os dois têm coautor em comum (sem nunca aparecerem juntos no mesmo item). Nome curto que
-    # cabe em dois nomes longos não junta; dois Lattes nunca juntam. Os dois casos viram aviso.
+    # ex: 'Jorge Sotomayor Tello' e 'Jorge Manuel Sotomayor Tello'. precisa ter coautor
+    # em comum e nunca aparecer junto no mesmo item
     externos = indice['externos']
     longos_por_curto = nomes_mais_longos(nomes_comparaveis(itens, externos), coautores_dos_externos(itens))
     trocas, avisos = {}, []
@@ -301,16 +277,14 @@ def unificar_nomes_do_meio(itens, indice):
             trocas[longos[0]] = curto  # fica o id do Lattes
         else:
             trocas[curto] = longos[0]
-    # Junção em cadeia (A -> B e B -> C) fica de fora: só junta direto no id que permanece.
+    # não junta em cadeia
     trocas = {antigo: novo for antigo, novo in trocas.items() if novo not in trocas}
     trocar_ids(itens, externos, trocas)
     return len(trocas), sorted(avisos)
 
 
 def nomes_comparaveis(itens, externos):
-    """{id: nomes completos} dos externos em uso que podem ser comparados por nome."""
-    # Fica de fora o Lattes suspeito e o externo com nome que já é de outro externo (homônimos
-    # ou nome de dois Lattes, já avisados na junção anterior).
+    # tira Lattes suspeito e homônimos
     nomes = {}
     for identificador in sorted(ids_dos_participantes(itens)):
         if not identificador.startswith('EXT-'):
@@ -331,7 +305,6 @@ def nomes_comparaveis(itens, externos):
 
 
 def coautores_dos_externos(itens):
-    """{id do externo: ids de todos que aparecem com ele em algum item}."""
     coautores = {}
     for item in itens:
         ids = {participante['id'] for participante in item['participantes']}
@@ -342,7 +315,6 @@ def coautores_dos_externos(itens):
 
 
 def nomes_mais_longos(nomes, coautores):
-    """{id: [ids cujo nome contém o dele, com o mesmo primeiro e último nome e coautor em comum]}."""
     por_pontas = {}
     for identificador, completos in nomes.items():
         for nome in completos:
@@ -360,7 +332,7 @@ def nomes_mais_longos(nomes, coautores):
 
 
 def mesma_pessoa(curto, longo, coautores):
-    """Têm coautores em comum e nunca aparecem juntos no mesmo item (aí seriam duas pessoas)?"""
+    """coautor em comum e nunca juntos no mesmo item"""
     do_curto, do_longo = coautores.get(curto, set()), coautores.get(longo, set())
     if longo in do_curto:
         return False

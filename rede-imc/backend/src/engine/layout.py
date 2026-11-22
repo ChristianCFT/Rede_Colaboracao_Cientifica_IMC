@@ -1,5 +1,4 @@
-"""Layouts pré-calculados: livre (por conexões), separado por área (IMC ancorado) e o anel em volta
-da rede, onde ficam os pesquisadores sem colaboração com o IMC."""
+# layouts pré-calculados: livre, por área e o anel dos sem colaboração
 import itertools
 import math
 
@@ -10,37 +9,34 @@ from scipy.spatial import cKDTree
 SC = 2000
 CENTROS = {'Computação': (-.8, 0), 'Matemática': (.8, 0), 'Ambas': (0, 0), 'Outras': (0, -.9), 'Sem área': (0, -.9)}
 
-# Distância ideal entre nós no spring_layout (quanto maior, mais espalhado). Cada layout tem o seu:
-K_LIVRE = .8   # livre: abre os leques de externos e o miolo, sem deixar a rede crescer para fora
-K_AREA = .18   # por área: os nós do IMC ficam fixos, e um k alto faria o resto explodir em volta deles
+# k do spring_layout
+K_LIVRE = .8   # livre
+K_AREA = .18   # por área (k alto espalha demais em volta do IMC fixo)
 
-# Espaçamento entre nós (unidades do mundo). A distância mínima é a mesma que a física do frontend tenta
-# manter (raio de colisão 4 × 5 = 20 por nó), para que o desenho do backend e a física não briguem.
+# mesma distância mínima da física do frontend (raio 4 x 5 = 20 por nó)
 DISTANCIA_MINIMA = 40
-PASSOS_AFASTAR = 400                   # limite de rodadas do afastamento
-FRACAO_DO_EMPURRAO = .6                # parte do empurrão aplicada por rodada (menor que 1 evita oscilar)
-FOLGA_ISOLADO = 2 * DISTANCIA_MINIMA   # espaço livre em volta de quem não tem nenhuma relação
-ANGULO_DOURADO = math.pi * (3 - math.sqrt(5))  # espalha pontos em espiral sem repetir direção
+PASSOS_AFASTAR = 400                   # máximo de rodadas
+FRACAO_DO_EMPURRAO = .6                # menor que 1 pra não oscilar
+FOLGA_ISOLADO = 2 * DISTANCIA_MINIMA   # espaço em volta de quem não tem relação
+ANGULO_DOURADO = math.pi * (3 - math.sqrt(5))  # espiral
 
-# Anel dos pesquisadores sem colaboração com o IMC (unidades do mundo; a rede principal ocupa ~2·SC × 2·SC).
-FOLGA = 140         # entre o contorno da rede principal e a primeira volta do anel
-VOLTAS = 3          # voltas concêntricas: espalha os pontos e evita que fiquem encostados
-ENTRE_VOLTAS = 90   # distância entre voltas
-SETORES = 180       # resolução angular com que o contorno da rede principal é medido
-ALCANCE = 12        # setores vizinhos que o contorno cobre (máximo móvel); evita reentrâncias
-SUAVIZAR = 9        # setores vizinhos na média que arredonda o contorno (sempre < ALCANCE)
+# anel dos sem colaboração
+FOLGA = 140         # entre a rede e a primeira volta
+VOLTAS = 3          # voltas do anel
+ENTRE_VOLTAS = 90   # entre voltas
+SETORES = 180       # resolução do contorno
+ALCANCE = 12        # janela do máximo móvel
+SUAVIZAR = 9        # janela da média (menor que ALCANCE)
 
 
 def _spring(G, k, **kw):
-    """Roda o spring_layout com os parâmetros comuns e escala para a tela."""
     p = nx.spring_layout(G, k=k, iterations=300, seed=7, **kw)
     return {n: (float(v[0]) * SC, float(v[1]) * SC) for n, v in p.items()}
 
 
 def livre(nos, G):
-    """Layout geral baseado nas conexões. Quem não tem nenhuma relação fica perto dos pesquisadores do IMC."""
-    # O spring_layout empurra para a borda quem não tem arestas (nada o puxa de volta), e isso deformava o
-    # anel. Por isso ele roda só com quem tem relações; os isolados são encaixados depois.
+    """quem não tem relação fica perto do IMC"""
+    # o spring_layout joga os isolados pra borda, então roda sem eles e encaixa depois
     ligados = G.subgraph([k for k in G if G.degree(k) > 0])
     pos = _afastar(_spring(ligados, K_LIVRE), set())
     for k in G:
@@ -50,9 +46,7 @@ def livre(nos, G):
 
 
 def por_area(nos, G):
-    """Posições iniciais por área do IMC (fixas) e layout para os demais."""
-    # Grupos com o mesmo centro ('Outras' e 'Sem área') dividem um só círculo: antes cada um fazia o
-    # seu, nos mesmos ângulos, e os professores dos dois grupos eram desenhados um em cima do outro.
+    # 'Outras' e 'Sem área' dividem o mesmo círculo (antes ficavam um em cima do outro)
     por = {}
     for k, v in nos.items():
         if v['instituto'] == 'IMC':
@@ -66,12 +60,7 @@ def por_area(nos, G):
 
 
 def _afastar(pos, fixos):
-    """Afasta os pares de nós mais próximos que DISTANCIA_MINIMA, até ninguém ficar grudado.
-
-    A cada rodada, cada par perto demais é empurrado em sentidos opostos pela metade do que falta.
-    Nós em `fixos` não se mexem. Determinístico: pontos coincidentes se separam numa direção que
-    depende só da posição deles na lista.
-    """
+    """afasta os nós mais próximos que DISTANCIA_MINIMA (os fixos não mexem)"""
     ids = list(pos)
     P = np.array([pos[k] for k in ids], dtype=float)
     preso = np.array([k in fixos for k in ids])
@@ -95,7 +84,7 @@ def _afastar(pos, fixos):
 
 
 def _perto_do_imc(nos, pos):
-    """Primeiro lugar livre (ninguém a menos de FOLGA_ISOLADO) numa espiral a partir do centro do IMC."""
+    """primeiro lugar livre numa espiral a partir do centro do IMC"""
     if not pos:
         return 0.0, 0.0
     imc = [p for k, p in pos.items() if nos[k]['instituto'] == 'IMC'] or list(pos.values())
@@ -109,11 +98,8 @@ def _perto_do_imc(nos, pos):
 
 
 def _contorno(ref):
-    """Contorno da rede principal: distância máxima ao centro em cada direção, já suavizada.
-
-    Medido numa caixa normalizada (elipse unitária), para o anel acompanhar a proporção da tela.
-    Devolve (cx, cy, meia-largura, meia-altura, raios por setor).
-    """
+    """contorno da rede: distância máxima ao centro em cada direção.
+    devolve (cx, cy, meia-largura, meia-altura, raios por setor)"""
     xs = [p[0] for p in ref.values()]
     ys = [p[1] for p in ref.values()]
     cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
@@ -123,8 +109,7 @@ def _contorno(ref):
         u, v = (x - cx) / hw, (y - cy) / hh
         k = int((math.atan2(v, u) % (2 * math.pi)) / (2 * math.pi) * SETORES) % SETORES
         raio[k] = max(raio[k], math.hypot(u, v))
-    # Máximo móvel (cobre buracos e pontas isoladas) e depois média móvel (arredonda). Como a média usa uma
-    # janela menor que a do máximo, o resultado nunca fica abaixo da rede em nenhuma direção.
+    # máximo móvel e depois média móvel pra arredondar
     cheio = [max(raio[(k + d) % SETORES] for d in range(-ALCANCE, ALCANCE + 1)) for k in range(SETORES)]
     liso = [sum(cheio[(k + d) % SETORES] for d in range(-SUAVIZAR, SUAVIZAR + 1)) / (2 * SUAVIZAR + 1)
             for k in range(SETORES)]
@@ -132,20 +117,15 @@ def _contorno(ref):
 
 
 def anel(nos, ref):
-    """Posiciona os pesquisadores sem colaboração com o IMC em volta da rede principal (`ref`).
-
-    São só pontos, sem relações entre eles. Ficam em voltas concêntricas que acompanham o contorno da
-    rede principal, agrupados por instituto (cada instituto ocupa um arco contínuo). Nunca tocam nas
-    posições da rede principal. Determinístico: as mesmas entradas produzem as mesmas posições.
-    """
+    """coloca os sem colaboração em anel em volta da rede, agrupados por instituto"""
     if not nos:
         return {}
     cx, cy, hw, hh, raio = _contorno(ref)
-    unidade = (hw + hh) / 2                                   # converte distâncias do mundo para a caixa normalizada
+    unidade = (hw + hh) / 2                                   # mundo -> caixa normalizada
     ordem = sorted(nos, key=lambda k: (nos[k]['instituto'], nos[k]['label'], k))
     pos = {}
     for i, k in enumerate(ordem):
-        ang = 2 * math.pi * i / len(ordem) - math.pi / 2      # começa no topo e segue no sentido horário
+        ang = 2 * math.pi * i / len(ordem) - math.pi / 2      # começa no topo
         setor = int((ang % (2 * math.pi)) / (2 * math.pi) * SETORES) % SETORES
         r = raio[setor] + (FOLGA + i % VOLTAS * ENTRE_VOLTAS) / unidade
         pos[k] = (cx + r * hw * math.cos(ang), cy + r * hh * math.sin(ang))

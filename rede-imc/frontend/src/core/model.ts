@@ -1,7 +1,4 @@
-// Dados originais no cliente: pesquisadores, relações, adjacência, atividades e cores.
-// A rede principal ocupa o início de N; os pesquisadores sem colaboração com o IMC vêm depois,
-// marcados com `extended`, para reaproveitar renderização, física e interação sem duplicá-las.
-// Eles são só vértices: E contém apenas as relações da rede principal.
+// dados da rede no cliente. os sem colaboração ficam no fim de N (extended)
 import type { GraphDTO, NodeDTO } from '../api/api';
 import { initPeso } from './peso';
 import type { GEdge, GNode, Pt } from './types';
@@ -12,31 +9,26 @@ export let E: GEdge[] = [];
 export let A: Record<string, [string, string]> = {};
 let PAL: Record<string, string> = {};
 export let GC: Record<string, string> = {};
-/** Nomes curtos das 5 dimensões, vindos da API (ex.: "Artigos"). */
 export let DIMN: string[] = [];
 export let IX = new Map<string, number>();
-/** Tamanho da rede principal (denominadores do HUD e do resumo). */
+/** tamanho da rede principal */
 export let MAIN_NODES = 0;
 export let MAIN_EDGES = 0;
-/** Quantos pesquisadores sem colaboração com o IMC existem na fonte. */
 export let EXTENDED_NODES = 0;
 
 export const col = (inst: string): string => PAL[inst] ?? '#444';
 
-/** Nomes por extenso usados nos filtros e no painel (mesma ordem de DIMN: art, prj, ori, ban, ptt). */
+/** mesma ordem de DIMN */
 export const DIM_LONG = ['Artigos científicos', 'Projetos de pesquisa', 'Orientações', 'Bancas', 'Produção técnico-tecnológica'];
-/** Cor de cada dimensão: variável CSS (troca sozinha entre tema claro e escuro). */
+/** variável CSS (muda com o tema) */
 export const dimCol = (j: number): string => `var(--d${j})`;
 
-// ---- Índice inteiro das atividades (acelera filtros por dimensão e por ano) ----
+// índice das atividades (pra filtrar mais rápido)
 export let NCODES = 0;
-/** Código textual de cada atividade (ex.: "ART-000123"). */
 export let CODE: string[] = [];
-/** Dimensão (0..4) de cada atividade. */
 export let CODE_DIM = new Uint8Array(0);
-/** Ano de cada atividade; 0 quando ausente ou inválido. */
+/** 0 quando não tem ano */
 export let CODE_YEAR = new Int16Array(0);
-/** Faixa de anos válidos da rede principal (limites da janela temporal). */
 export let YMIN = 0;
 export let YMAX = 0;
 
@@ -62,7 +54,6 @@ export function initModel(g: GraphDTO): void {
   MAIN_NODES = g.nodes.length;
   EXTENDED_NODES = extra.length;
 
-  // Códigos de atividade → inteiros (dimensão e ano por índice).
   const codeIx = new Map<string, number>();
   const dims: number[] = [], years: number[] = [];
   CODE = [];

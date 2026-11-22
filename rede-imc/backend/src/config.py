@@ -1,4 +1,3 @@
-"""Caminhos, nomes de arquivos e colunas, paleta e regras de classificação por área."""
 import os
 from pathlib import Path
 
@@ -7,17 +6,16 @@ RAW = ROOT / 'data' / 'raw'
 FILES = dict(saida='dataset_saida_IMC.csv', entrada='dataset_entrada_IMC.csv',
              unifei='dataset_completo_UNIFEI.csv', atividades='dataset_atividades_IMC.csv')
 
-# Colunas lidas de dataset_atividades_IMC (o arquivo tem outras que a aplicação não usa).
+# colunas usadas do dataset_atividades
 COLUNAS_ATIVIDADES = ['id_atividade', 'ano', 'titulo']
 
-DIMS = ['art', 'prj', 'ori', 'ban', 'ptt']  # ordem do vetor contagem
+DIMS = ['art', 'prj', 'ori', 'ban', 'ptt']  # ordem do vetor
 DIMN = ['Artigos', 'Projetos', 'Orientações', 'Bancas', 'Prod. téc.']
 
-# Peso da colaboração (proposta metodológica, seção 5): importância de cada dimensão, somando 1.
-# Ligado pelo nome da dimensão (não pela posição): pesos 4 / 2 / 2 / 1,5 / 0,5 de um total de 10.
+# peso de cada dimensão (soma 1)
 ALFAS = {'art': 0.40, 'prj': 0.20, 'ori': 0.20, 'ptt': 0.15, 'ban': 0.05}
 
-# Um professor com várias áreas entra em todos os grupos cujas palavras-chave aparecerem.
+# professor com várias áreas entra em todos os grupos
 REGRAS_AREA = {'Computação': ['ciência da computação'],
                'Matemática': ['matemática', 'probabilidade e estatística']}
 

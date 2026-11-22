@@ -1,17 +1,14 @@
-/* Barra lateral esquerda: linhas de texto e seções retráteis (acordeões). */
-
 .row {
   display: flex;
   align-items: baseline;
   gap: 2px;
 }
 
-/* Rótulo acima do slider "Mín. de atividades em comum" */
 .slider-label {
   margin-top: 8px;
 }
 
-/* Acordeões: o chevron fica na margem esquerda, alinhando o texto com o restante da barra. */
+/* acordeões */
 .acc-h {
   display: flex;
   align-items: center;
@@ -62,7 +59,7 @@
   display: none;
 }
 
-/* Checkbox "marcar/desmarcar todos" no cabeçalho da seção */
+/* marcar/desmarcar todos */
 .master {
   margin: 0 0 0 auto;
   cursor: pointer;

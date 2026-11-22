@@ -1,4 +1,3 @@
-// Ações de seleção compartilhadas por canvas, busca e painel de detalhes.
 import { selection, emit } from '../../core/state';
 import { centerOn } from './camera';
 

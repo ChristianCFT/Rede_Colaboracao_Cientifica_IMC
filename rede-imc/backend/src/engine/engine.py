@@ -1,10 +1,5 @@
-"""Orquestra a leitura dos CSVs e o NetworkX uma única vez (cache) e serve os schemas da API.
-
-Dois conjuntos de pesquisadores, sempre separados:
-  - rede principal: os vértices de dataset_entrada_IMC e suas relações (o recorte original);
-  - sem colaboração: pesquisadores de dataset_completo_UNIFEI fora da rede principal e sem relação
-    direta com nenhum pesquisador do IMC. São só vértices, sem relações (ver loaders e layout.anel).
-"""
+# lê os CSVs e monta o grafo uma vez só (cache)
+# 'sem colaboração' = pesquisadores da UNIFEI sem relação com o IMC, só vértices
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -20,7 +15,6 @@ class NodeNotFound(Exception):
 
 @dataclass(frozen=True)
 class Universo:
-    """Pesquisadores, relações, graus e posições (layout livre e por área) de um dos conjuntos."""
     nos: dict
     arestas: dict
     grau: dict
@@ -28,14 +22,13 @@ class Universo:
     pos_area: dict
 
     def node(self, k: str) -> Node:
-        """Converte os dados internos de um pesquisador no schema Node."""
         v, p, q = self.nos[k], self.pos_livre[k], self.pos_area[k]
         return Node(id=k, label=v['label'], instituto=v['instituto'], area=v['area'], grupo=v['grupo'],
                     comp=v['comp'], mat=v['mat'], grau=self.grau.get(k, 0), lattes_url=v['lattes'],
                     x=round(p[0], 1), y=round(p[1], 1), x_area=round(q[0], 1), y_area=round(q[1], 1))
 
     def com_atividades(self) -> dict:
-        """Relações com pelo menos uma atividade em comum (as únicas enviadas ao frontend)."""
+        """só relações com pelo menos uma atividade"""
         return {k: e for k, e in self.arestas.items() if sum(e['vc']) >= 1}
 
 
@@ -45,7 +38,6 @@ def _edge(k: tuple, e: dict, maiores: list[int]) -> Edge:
 
 
 def _resposta(principal: Universo, sem_colab: Universo, atividades: dict, maiores: list[int]) -> Graph:
-    """Monta a resposta de /graph (calculada uma única vez)."""
     ed = principal.com_atividades()
     com_aresta = {x for k in ed for x in k}
     nos = [k for k, v in principal.nos.items() if k in com_aresta or v['instituto'] == 'IMC']
@@ -62,14 +54,13 @@ class Engine:
     principal: Universo
     sem_colab: Universo
     atividades: dict
-    maiores: list[int]      # referências do peso: maior contagem de cada dimensão na rede principal
+    maiores: list[int]      # maior contagem de cada dimensão
     resposta: Graph
 
     def graph(self) -> Graph:
         return self.resposta
 
     def detail(self, k: str) -> NodeDetail:
-        """Busca um pesquisador (em qualquer conjunto) e monta seus vizinhos e atividades."""
         u = self.principal if k in self.principal.nos else self.sem_colab if k in self.sem_colab.nos else None
         if u is None:
             raise NodeNotFound(k)
@@ -90,7 +81,6 @@ class Engine:
 
 @lru_cache(maxsize=1)
 def get_engine() -> Engine:
-    """Executa o pipeline pesado uma vez por processo."""
     d = loaders.carregar()
     urls = loaders.lattes(d['unifei'])
 
@@ -103,5 +93,5 @@ def get_engine() -> Engine:
     sem_colab = Universo(extra, {}, {}, layout.anel(extra, principal.pos_livre), layout.anel(extra, principal.pos_area))
 
     acts = loaders.atividades(d['atividades'])
-    maiores = peso.referencias(principal.com_atividades())  # base comum: todas as relações enviadas
+    maiores = peso.referencias(principal.com_atividades())  # base comum pra todas as relações
     return Engine(principal, sem_colab, acts, maiores, _resposta(principal, sem_colab, acts, maiores))

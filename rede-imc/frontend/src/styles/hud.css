@@ -1,4 +1,4 @@
-/* HUD: indicadores no topo do canvas. */
+/* HUD */
 
 .hud {
   position: absolute;
@@ -28,7 +28,6 @@
   border-left: 1px solid var(--glass-bd);
 }
 
-/* Rótulo do indicador */
 .kl {
   font-size: 10px;
   text-transform: uppercase;
@@ -36,7 +35,6 @@
   color: var(--mu);
 }
 
-/* Valor do indicador */
 .kv {
   font-size: 13px;
   font-variant-numeric: tabular-nums;

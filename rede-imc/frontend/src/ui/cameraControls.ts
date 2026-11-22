@@ -1,4 +1,4 @@
-// Controles flutuantes da câmera (canto inferior direito).
+// controles da câmera
 import { $ } from '../core/dom';
 import { display } from '../core/state';
 import { fitView, zoomBy } from '../graph/interaction/camera';

@@ -1,6 +1,4 @@
-// Listas de filtro (bolinha + nome + contador) com checkbox mestre tri-state.
-// Contadores seguem a lógica de busca facetada: cada lista ignora o próprio filtro e aplica os demais,
-// então um item desmarcado continua mostrando quanto ele traria de volta.
+// listas de filtro com checkbox mestre. o contador de cada lista ignora o próprio filtro
 import { $, esc, fmt } from '../../core/dom';
 import { DIM_LONG, GC, col, dimCol } from '../../core/model';
 import { emit, filters, on } from '../../core/state';

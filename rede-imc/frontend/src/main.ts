@@ -1,10 +1,4 @@
-// Ponto de entrada: carrega o grafo da API (com loading/erro) e inicializa os módulos.
-//
-//   api/        comunicação com o backend e contratos (DTOs)
-//   core/       dados originais (model), estado + eventos (state), recorte filtrado (selectors)
-//   graph/      canvas: render/ (cena, arestas, nós, rótulos), interaction/ (câmera, mouse, seleção), física
-//   ui/         sidebar/ (filtros e controles), details/ (painel direito), HUD e controles da câmera
-//   styles/     CSS por responsabilidade (carregado pelo index.html)
+// carrega o grafo e inicia os módulos
 import { api, ApiError } from './api/api';
 import { initModel } from './core/model';
 import { initState } from './core/state';

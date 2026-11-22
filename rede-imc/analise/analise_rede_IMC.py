@@ -1,53 +1,16 @@
 """
-=====================================================================
-ANÁLISE DA REDE DE COLABORAÇÃO DO IMC/UNIFEI — TEORIA DOS GRAFOS
-=====================================================================
+Análise da rede de colaboração do IMC/UNIFEI.
 
-COMO RODAR
-    python analise_rede_IMC.py              # procura os CSVs nesta pasta
-    python analise_rede_IMC.py <pasta_csv>  # ou numa pasta indicada
+Uso:
+    python analise_rede_IMC.py              (procura os CSVs nesta pasta)
+    python analise_rede_IMC.py <pasta_csv>
 
-    Se os 4 CSVs não estiverem na pasta do script, ele usa
-    ../backend/data/raw (onde a mineração grava os arquivos).
-    Só usa a biblioteca padrão do Python 3. Gera grafo_IMC.json e
-    vertices_IMC.json na pasta do script e imprime toda a análise.
+Se não achar os CSVs aqui, usa ../backend/data/raw.
+Gera grafo_IMC.json e vertices_IMC.json.
 
-ETAPAS E FUNÇÕES
-    Etapa 0 — leitura
-        ler_csv, mostrar_estrutura .......... lê os CSVs e mostra colunas
-    Etapa 1 — CSV -> JSON
-        referencias_por_dimensao ............ maior contagem de cada dimensão
-        calcular_peso ....................... peso da aresta a partir do vetor
-        arestas_unicas ...................... tira as duplicatas (A,B)/(B,A)
-        montar_vertices ..................... atributos (nome, instituto, áreas)
-        classificar_imc ..................... Computação / Matemática / Indefinido
-        montar_adjacencia ................... dicionário de dicionários
-        salvar_json / carregar_json
-    Etapa 2 — utilidades de grafo
-        subgrafo, contar_arestas, densidade, bfs_distancias, componentes
-    Pergunta 1 — centralidade
-        grau, forca, intermediacao_brandes, proximidade_wf, ranking_combinado
-    Pergunta 2 — pontes
-        pontes_comp_mat (definição A), pontes_institutos (definição B),
-        tarjan_iterativo (pontos de articulação e arestas-ponte)
-    Pergunta 3 — comunidades
-        louvain (fase 1 + fase 2), modularidade, resumo_comunidades
-    Validações
-        validar (imprime OK / FALHOU)
-
-SOBRE O PESO DA ARESTA
-    O prompt fala em "soma ponderada" com 1 artigo = 0.078625 e 1 banca
-    = 0.009333. Esses números saem exatamente da fórmula que o projeto já
-    usa (backend/src/engine/peso.py):
-        z_d  = ln(1 + x_d) / ln(1 + M_d)     (M_d = maior x_d da rede)
-        peso = soma( ALFAS[d] * z_d )        (ALFAS somam 1)
-    Ex.: 0.40 * ln 2 / ln 34 = 0.078625 (M_ART = 33) e
-         0.05 * ln 2 / ln 41 = 0.009333 (M_BAN = 40).
-    Com ela o vetor [2,0,1,1,1] dá 0.247292, que é o valor de conferência
-    do prompt. Uma soma linear com pesos fixos por atividade não reproduz
-    esse valor, então este script usa a fórmula do projeto. Se ALFAS
-    tiver algum None, o script cai no peso simples (soma do vetor) e avisa.
-=====================================================================
+Peso da aresta: mesma fórmula do backend (backend/src/engine/peso.py)
+    z_d  = ln(1 + x_d) / ln(1 + M_d)
+    peso = soma(ALFAS[d] * z_d)
 """
 import csv
 import json
@@ -60,7 +23,7 @@ from collections import Counter, defaultdict, deque
 
 random.seed(42)
 
-# ------------------------------------------------------------------ configuração
+# configuração
 PASTA_SCRIPT = os.path.dirname(os.path.abspath(__file__))
 
 CONFIG = {
@@ -85,25 +48,24 @@ CONFIG = {
 }
 
 DIMENSOES = ['ART', 'PRJ', 'ORI', 'BAN', 'PTT']
-# Importância de cada dimensão (mesmos α de backend/src/config.py). None => peso simples.
+# peso de cada dimensão (igual ao backend/src/config.py). None = peso simples
 ALFAS = {'ART': 0.40, 'PRJ': 0.20, 'ORI': 0.20, 'BAN': 0.05, 'PTT': 0.15}
 
 INSTITUTOS_UNIFEI = ['IFQ', 'IESTI', 'IEPG', 'IRN', 'IEM', 'IEDU', 'ISEE', 'ICT', 'ICPA', 'IEI', 'UNIFEI - PA']
 COMP, MAT, INDEF = 'Computação', 'Matemática', 'Indefinido'
 REGRAS_AREA = {COMP: ['ciência da computação'], MAT: ['matemática', 'probabilidade e estatística']}
 
-# Prioridade sobre a regra automática. Ex.: {"2053076": ["Matemática"]}
+# força a área de alguém, ex: {"2053076": ["Matemática"]}
 CLASSIFICACAO_MANUAL = {}
 
-PARES_UNICOS_ESPERADOS = 1898   # valor citado no prompt (versão antiga dos CSVs)
-# Maiores valores (M) da versão dos CSVs em que o prompt foi escrito. Os valores de conferência do
-# prompt (0.078625, 0.009333, 0.247292) dependem deles; a PRJ não entra no vetor [2,0,1,1,1].
+PARES_UNICOS_ESPERADOS = 1898   # valor do enunciado (CSVs antigos)
+# M da versão antiga dos CSVs, só pra conferir os valores do enunciado
 M_DO_PROMPT = [33, 12, 5, 40, 17]
 TOP = 10
 LARG_NOME = 35
 
 
-# ------------------------------------------------------------------ impressão
+# impressão
 def cabecalho(titulo):
     print('\n' + '=' * 20 + f' {titulo} ' + '=' * 20)
 
@@ -117,7 +79,7 @@ def corta(nome, n=LARG_NOME):
 
 
 def tabela(linhas, colunas, alinhamento):
-    """Tabela alinhada só com ljust/rjust. alinhamento: 'l' ou 'r' por coluna."""
+    """tabela alinhada, alinhamento 'l' ou 'r' por coluna"""
     larg = [max(len(str(c)), *(len(str(l[i])) for l in linhas)) if linhas else len(str(c))
             for i, c in enumerate(colunas)]
     fmt = lambda valores: ' | '.join(str(v).ljust(w) if a == 'l' else str(v).rjust(w)
@@ -132,7 +94,7 @@ def status(ok, texto):
     print(f"  [{'OK' if ok else 'FALHOU'}] {texto}")
 
 
-# ------------------------------------------------------------------ etapa 0: leitura
+# etapa 0: leitura
 def achar_pasta_csv():
     if len(sys.argv) > 1:
         return sys.argv[1]
@@ -154,7 +116,7 @@ def mostrar_estrutura(dados):
 
 
 def vetor(texto):
-    """'[1, 0, 2, 0, 0]' -> lista de 5 inteiros. Vazio ou inválido -> zeros."""
+    """'[1, 0, 2, 0, 0]' -> lista de 5 inteiros (inválido vira zeros)"""
     try:
         v = json.loads(texto) if texto and texto.strip() else None
     except json.JSONDecodeError:
@@ -162,7 +124,7 @@ def vetor(texto):
     return [int(x) for x in v] if isinstance(v, list) and len(v) == 5 else [0] * 5
 
 
-# ------------------------------------------------------------------ etapa 1: peso
+# etapa 1: peso
 def pesos_definidos():
     return all(ALFAS.get(d) is not None for d in DIMENSOES)
 
@@ -185,7 +147,7 @@ def calcular_peso(vetor_contagem, maiores):
 
 
 def arestas_unicas(linhas):
-    """Chave = par ordenado. Duplicatas IMC-IMC não somam; só se confere se o vetor bate."""
+    """chave = par ordenado; duplicata não soma, só confere o vetor"""
     c = CONFIG['colunas_saida']
     arestas, conflitos, auto = {}, 0, 0
     for l in linhas:
@@ -203,7 +165,7 @@ def arestas_unicas(linhas):
     return arestas, conflitos, auto
 
 
-# ------------------------------------------------------------------ etapa 1: vértices
+# etapa 1: vértices
 def areas_de(texto):
     return [a.strip() for a in (texto or '').split(';') if a.strip()]
 
@@ -217,7 +179,7 @@ def classificar_imc(pid, areas):
 
 
 def montar_vertices(unifei, entrada, saida):
-    """UNIFEI vem do dataset_completo; externos (e quem faltar) do dataset_entrada / arestas."""
+    """UNIFEI vem do dataset_completo, o resto do dataset_entrada"""
     cu, ce, cs = CONFIG['colunas_unifei'], CONFIG['colunas_entrada'], CONFIG['colunas_saida']
     v = {}
     for l in unifei:
@@ -226,7 +188,7 @@ def montar_vertices(unifei, entrada, saida):
         pid = l[ce['id']]
         if pid not in v:
             v[pid] = {'nome': l[ce['nome']], 'instituto': l[ce['instituto']], 'areas': areas_de(l[ce['area']])}
-    for l in saida:  # garantia: todo ID de aresta tem atributo
+    for l in saida:  # todo id de aresta precisa ter atributo
         for k in ('1', '2'):
             pid = l[cs['id' + k]]
             if pid not in v:
@@ -255,7 +217,7 @@ def carregar_json(nome):
         return json.load(f)
 
 
-# ------------------------------------------------------------------ utilidades de grafo
+# utilidades de grafo
 def subgrafo(adj, ids):
     ids = set(ids)
     return {u: {v: w for v, w in adj[u].items() if v in ids} for u in adj if u in ids}
@@ -292,7 +254,7 @@ def componentes(adj):
     return sorted(comps, key=len, reverse=True)
 
 
-# ------------------------------------------------------------------ pergunta 1: centralidade
+# pergunta 1: centralidade
 def grau(adj):
     return {u: len(n) for u, n in adj.items()}
 
@@ -302,7 +264,7 @@ def forca(adj):
 
 
 def intermediacao_brandes(adj):
-    """Brandes sem peso. Normalizado por 2/((n-1)(n-2)) após dividir por 2 (grafo não direcionado)."""
+    """Brandes sem peso, normalizado por 2/((n-1)(n-2))"""
     cb = dict.fromkeys(adj, 0.0)
     for s in adj:
         pilha, pred = [], defaultdict(list)
@@ -333,7 +295,7 @@ def intermediacao_brandes(adj):
 
 
 def proximidade_wf(adj):
-    """Wasserman-Faust: ((r-1)/(n-1)) * ((r-1)/soma_dist); r conta o próprio vértice."""
+    """Wasserman-Faust: ((r-1)/(n-1)) * ((r-1)/soma_dist)"""
     n = len(adj)
     res = {}
     for u in adj:
@@ -399,9 +361,9 @@ def pergunta1(grafos, vertices):
     return resultados
 
 
-# ------------------------------------------------------------------ pergunta 2: pontes
+# pergunta 2: pontes
 def tarjan_iterativo(adj):
-    """Pontos de articulação e arestas-ponte, DFS iterativa com tempo de descoberta e low-link."""
+    """pontos de articulação e pontes (DFS iterativa)"""
     desc, low, pai = {}, {}, {}
     articulacoes, pontes = set(), []
     tempo = 0
@@ -562,7 +524,7 @@ def pergunta2(grafos, adj_total, vertices):
             'insubstituiveis': insub, 'ext': ext}
 
 
-# ------------------------------------------------------------------ pergunta 3: Louvain
+# pergunta 3: Louvain
 def modularidade(adj, comunidade):
     m2 = sum(sum(n.values()) for n in adj.values())  # 2m
     if m2 == 0:
@@ -572,14 +534,14 @@ def modularidade(adj, comunidade):
         grau_com[comunidade[u]] += sum(viz.values())
         for v, w in viz.items():
             if comunidade[u] == comunidade[v]:
-                interno[comunidade[u]] += w  # conta cada aresta interna duas vezes = 2*L_c
+                interno[comunidade[u]] += w  # cada aresta interna conta 2x
     return sum(interno[c] / m2 - (grau_com[c] / m2) ** 2 for c in grau_com)
 
 
 def louvain_fase1(adj):
-    """Move nós para a comunidade vizinha de maior ganho até não haver melhora."""
+    """move os nós pra comunidade vizinha de maior ganho"""
     com = {u: u for u in adj}
-    # laço de supernó (adj[u][u]) já guarda 2 x peso interno, então o grau é a soma da linha
+    # laço do supernó já guarda 2x o peso interno
     k = {u: sum(adj[u].values()) for u in adj}
     m2 = sum(k.values())
     tot = dict(k)
@@ -612,7 +574,7 @@ def louvain_fase1(adj):
 
 
 def louvain_agregar(adj, com):
-    """Supernós: novo dicionário de dicionários. Laço guarda a soma da linha interna (2*w interno)."""
+    """monta o grafo de supernós"""
     novo = defaultdict(lambda: defaultdict(float))
     for u, viz in adj.items():
         novo[com[u]]  # garante isolados
@@ -687,7 +649,7 @@ def pergunta3(grafos, vertices, pontes):
     return resultados
 
 
-# ------------------------------------------------------------------ validações
+# validações
 def conferir_atividades(atividades, arestas, n=3):
     c = CONFIG['colunas_atividades']
     part = {l[c['id']]: set(p for p in l[c['participantes']].split(';') if p) for l in atividades}
@@ -715,7 +677,7 @@ def validar(adj, vertices, arestas, conflitos, auto, maiores, intermed, louv, at
            f'soma dos graus = 2 x arestas ({sum(len(v) for v in adj.values())} = 2 x {contar_arestas(adj)})')
     status(all(u in vertices for u in adj), 'todo ID da adjacência existe em vertices_IMC.json')
     if pesos_definidos():
-        # a fórmula é conferida com os M da época do prompt; os pesos gravados usam os M atuais
+        # a fórmula é conferida com os M antigos, os pesos usam os M atuais
         for v, esperado in (([2, 0, 1, 1, 1], 0.247292), ([1, 0, 0, 0, 0], 0.078625), ([0, 0, 0, 1, 0], 0.009333)):
             p = calcular_peso(v, M_DO_PROMPT)
             status(abs(p - esperado) < 1e-6, f'peso({v}) com M do prompt = {p:.6f} (esperado {esperado})')
@@ -731,14 +693,14 @@ def validar(adj, vertices, arestas, conflitos, auto, maiores, intermed, louv, at
                    f"{corta(vertices[b]['nome'], 25)} em ids_participantes")
 
 
-# ------------------------------------------------------------------ principal
+# principal
 def main():
     t0 = time.time()
     pasta = achar_pasta_csv()
     dados = {k: ler_csv(pasta, k) for k in CONFIG['arquivos']}
     mostrar_estrutura(dados)
 
-    # ---------- etapa 1: CSV -> JSON
+    # etapa 1: CSV -> JSON
     cabecalho('ETAPA 1 — CSV -> JSON')
     arestas, conflitos, auto = arestas_unicas(dados['saida'])
     maiores = referencias_por_dimensao(arestas)
@@ -763,7 +725,7 @@ def main():
     salvar_json(vertices, CONFIG['json_vertices'])
     print(f"\nGravados: {CONFIG['json_grafo']} e {CONFIG['json_vertices']} em {PASTA_SCRIPT}")
 
-    # recarrega: o JSON é a fonte única daqui em diante
+    # recarrega do JSON
     adj = carregar_json(CONFIG['json_grafo'])
     vertices = carregar_json(CONFIG['json_vertices'])
 
@@ -791,7 +753,7 @@ def main():
     for t, n in tipos.most_common():
         print(f'  {t.ljust(18)} {str(n).rjust(5)}')
 
-    # ---------- subgrafos
+    # subgrafos
     grafos = {
         'G_TOTAL': adj,
         'G_UNIFEI': subgrafo(adj, [u for u in adj if vertices[u]['instituto'] != 'EXT']),
@@ -808,7 +770,7 @@ def main():
             {g: r['medidas']['Intermediação'] for g, r in r1.items()},
             {g: r['q'] for g, r in r3.items()}, dados['atividades'])
 
-    # ---------- respostas finais
+    # respostas
     cabecalho('RESPOSTAS FINAIS')
     n = lambda u: vertices[u]['nome']
     print('\nPergunta 1 — Quem é central?')

@@ -1,4 +1,4 @@
-// Mouse e teclado no canvas: zoom, pan, arrastar nós, hover (holofote + tooltip) e clique.
+// eventos de mouse e teclado no canvas
 import { $, esc, fmt } from '../../core/dom';
 import { E, N } from '../../core/model';
 import { camera, display, emit, selection, setPeso } from '../../core/state';
@@ -91,8 +91,7 @@ export function initMouse(): void {
   });
   cv.addEventListener('dblclick', (e) => { if (nodeAt(e.offsetX, e.offsetY) < 0) fitView(); });
 
-  // Atalhos de teclado (fora de campos de texto): Esc limpa a seleção, +/− zoom, F enquadra,
-  // P liga/desliga o modo peso.
+  // atalhos: Esc, +/-, F e P
   window.addEventListener('keydown', (e) => {
     const t = e.target as HTMLElement | null;
     if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;

@@ -1,4 +1,3 @@
-"""Rotas HTTP do grafo: as duas consumidas pelo frontend."""
 from fastapi import APIRouter
 
 from src.controllers import graph_controller

@@ -1,4 +1,4 @@
-// Seções "Cores e layout" e "Exibição".
+// seções "Cores e layout" e "Exibição"
 import { $ } from '../../core/dom';
 import { display, emit, emitSoon, filters, on } from '../../core/state';
 import type { ColorMode, LayoutMode } from '../../core/types';
@@ -21,7 +21,7 @@ export function initDisplay(): void {
     });
   });
 
-  // Rótulos dos pesquisadores do IMC: só redesenham (não recalculam o recorte).
+  // só redesenha
   const labImc = $<HTMLInputElement>('labImc');
   labImc.addEventListener('change', () => { display.labelsImc = labImc.checked; emit('view'); });
 
@@ -32,7 +32,7 @@ export function initDisplay(): void {
     filters.minActivities = Number(ms.value); $('mv').textContent = String(filters.minActivities); emitSoon('filters');
   });
 
-  // Sincroniza com o estado (ex.: depois de "Limpar filtros").
+  // sincroniza depois de limpar os filtros
   on('filters', () => {
     ext.checked = filters.showExternal;
     if (Number(ms.value) !== filters.minActivities) {

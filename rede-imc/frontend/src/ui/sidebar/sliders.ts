@@ -1,5 +1,4 @@
-// Sliders com a mesma aparência: o simples ("Mín. de atividades em comum") e o duplo (janela temporal).
-// A trilha e o preenchimento são elementos próprios para que os dois fiquem idênticos em qualquer navegador.
+// slider simples e duplo com trilha própria
 import { $, fmt } from '../../core/dom';
 import { YMAX, YMIN } from '../../core/model';
 import { emitSoon, filters, on } from '../../core/state';
@@ -9,7 +8,6 @@ const THUMB = 16;
 const pos = (p: number): string => `calc(${p} * (100% - ${THUMB}px) + ${THUMB / 2}px)`;
 const frac = (v: number, lo: number, hi: number): number => (hi > lo ? (v - lo) / (hi - lo) : 0);
 
-/** Envolve um input range existente com trilha e preenchimento (slider simples). */
 export function wrapSlider(input: HTMLInputElement): () => void {
   const wrap = document.createElement('div');
   wrap.className = 'sl';
@@ -39,13 +37,13 @@ export function initTimeWindow(): void {
     const p0 = frac(filters.yearFrom, YMIN, YMAX), p1 = frac(filters.yearTo, YMIN, YMAX);
     fill.style.left = pos(p0);
     fill.style.width = `calc(${p1 - p0} * (100% - ${THUMB}px))`;
-    // Com as duas alças no mesmo ano, a que pode se mover fica por cima.
+    // alças no mesmo ano: a que pode mexer fica por cima
     a.style.zIndex = filters.yearFrom === filters.yearTo && filters.yearFrom > (YMIN + YMAX) / 2 ? '3' : '';
     a.setAttribute('aria-valuetext', `de ${filters.yearFrom}`); b.setAttribute('aria-valuetext', `até ${filters.yearTo}`);
   };
   a.addEventListener('input', () => { filters.yearFrom = Math.min(Number(a.value), filters.yearTo); paint(); emitSoon('filters'); });
   b.addEventListener('input', () => { filters.yearTo = Math.max(Number(b.value), filters.yearFrom); paint(); emitSoon('filters'); });
-  // Clique na trilha move a alça mais próxima.
+  // clique na trilha move a alça mais próxima
   box.addEventListener('pointerdown', (e) => {
     if (e.target === a || e.target === b) return;
     const r = box.getBoundingClientRect();

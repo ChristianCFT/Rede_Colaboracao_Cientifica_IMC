@@ -1,4 +1,3 @@
-// Subtítulo da sidebar: mostra a rede principal completa ou os filtros ativos, com atalho para limpá-los.
 import { $, fmt } from '../../core/dom';
 import { MAIN_EDGES, MAIN_NODES } from '../../core/model';
 import { filters, fullYearRange, on, resetFilters } from '../../core/state';

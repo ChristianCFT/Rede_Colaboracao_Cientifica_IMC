@@ -1,4 +1,4 @@
-// Painel direito (detalhes contextuais): resumo do recorte, pesquisador ou aresta.
+// painel da direita
 import { $ } from '../../core/dom';
 import { display, on, selection } from '../../core/state';
 import { pickEdge, pickNode } from '../../graph/interaction/selection';
@@ -7,7 +7,6 @@ import { bindNodeView, nodeView } from './nodeView';
 import { edgePesoView, nodePesoView, summaryPesoView } from './pesoView';
 import { summaryView } from './summaryView';
 
-/** Conteúdo do painel: modo peso (pesoView) ou modo contagem (vetor de características). */
 function conteudo(render: () => void): string {
   if (display.peso) {
     return selection.node >= 0 ? nodePesoView(selection.node)
@@ -32,7 +31,7 @@ export function initDetails(): void {
     side.querySelectorAll<HTMLElement>('[data-n]').forEach((d) => {
       d.addEventListener('click', (ev) => { ev.preventDefault(); pickNode(Number(d.dataset['n']), true); });
     });
-    // Linhas clicáveis também respondem ao teclado (Tab + Enter/Espaço).
+    // Enter/Espaço também funcionam
     side.querySelectorAll<HTMLElement>('div[data-n], div[data-e], span[data-e]').forEach((d) => {
       d.tabIndex = 0; d.setAttribute('role', 'button');
       d.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); d.click(); } });

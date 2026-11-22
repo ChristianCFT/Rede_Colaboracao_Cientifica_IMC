@@ -1,6 +1,4 @@
-/* Painel de detalhes (à direita): resumo do recorte, pesquisador e aresta. */
-
-/* Vetor das 5 dimensões em grade */
+/* vetor das dimensões */
 .vec {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -26,7 +24,7 @@
   color: var(--mu);
 }
 
-/* Atividades de uma aresta; .out = fora do recorte atual */
+/* .out = fora do recorte */
 .act {
   margin: 3px 0;
   padding-left: 8px;
@@ -41,7 +39,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Etiqueta de instituto / área */
+/* etiqueta */
 .badge {
   display: inline-block;
   padding: 1px 7px;
@@ -50,12 +48,11 @@
   font-size: 11px;
 }
 
-/* Nome de pesquisador clicável no título de uma aresta */
 .nl {
   color: inherit;
 }
 
-/* Barras horizontais: rótulo · barra · valor */
+/* barras */
 .bars {
   display: grid;
   grid-template-columns: 100px 1fr auto;
@@ -102,7 +99,7 @@
   font-weight: 600;
 }
 
-/* Listas de pesquisadores (Top 5, mais conectados) */
+/* listas de pesquisadores */
 .li .rk {
   display: inline-block;
   width: 16px;
@@ -140,7 +137,6 @@
   margin: 4px 0 0;
 }
 
-/* Título de grupo (dimensão) com contador */
 .grp-h {
   display: flex;
   align-items: center;
@@ -167,7 +163,7 @@ details.all > summary {
   margin-top: 14px;
 }
 
-/* Modo peso: valor em destaque e barra de 0 a 1 */
+/* modo peso */
 .peso {
   display: flex;
   align-items: baseline;
@@ -194,7 +190,7 @@ details.all > summary {
   background: var(--ac);
 }
 
-/* "Como o peso é calculado": tipo · importância · maior valor na rede */
+/* explicação do peso */
 details.como {
   margin-top: 14px;
 }

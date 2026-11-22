@@ -1,4 +1,4 @@
-"""FastAPI: uvicorn src.main:app --reload --port 8000 (docs em /docs)."""
+# uvicorn src.main:app --reload --port 8000
 import logging
 from contextlib import asynccontextmanager
 
@@ -15,7 +15,7 @@ log = logging.getLogger('imc-rede')
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    get_engine()  # aquece o cache no start-up
+    get_engine()  # já carrega o cache no início
     yield
 
 

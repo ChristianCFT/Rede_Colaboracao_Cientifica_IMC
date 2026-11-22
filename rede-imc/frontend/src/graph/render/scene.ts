@@ -1,5 +1,4 @@
-// Atualização da cena (canvas 2D): tamanho, tema, laço de desenho e exportação em PNG.
-// A ordem de cada quadro é arestas → nós → rótulos, todos sobre o mesmo recorte e o mesmo destaque.
+// laço de desenho: arestas → nós → rótulos
 import { $ } from '../../core/dom';
 import { camera, on } from '../../core/state';
 import { getView } from '../../core/selectors';
@@ -12,7 +11,7 @@ import { drawNodes, nodeRadius } from './nodes';
 export const cv = $<HTMLCanvasElement>('cv');
 const ctx = cv.getContext('2d')!;
 
-// Cores do tema lidas das variáveis CSS (atualizadas quando o esquema de cores do sistema muda).
+// cores do tema (variáveis CSS)
 let theme: Theme = { tx: '#e6e8ee', bg: '#121212' };
 function readTheme(): void {
   const cs = getComputedStyle(document.documentElement);
@@ -39,7 +38,7 @@ export function resize(): void {
   cv.width = Math.round(camera.W * camera.dpr); cv.height = Math.round(camera.H * camera.dpr); draw();
 }
 
-/** Exporta a imagem do canvas com o fundo do tema (o canvas em si é transparente). */
+/** o canvas é transparente, então pinta o fundo antes */
 export function exportPNG(name = 'grafo_IMC.png'): void {
   const out = document.createElement('canvas');
   out.width = cv.width; out.height = cv.height;

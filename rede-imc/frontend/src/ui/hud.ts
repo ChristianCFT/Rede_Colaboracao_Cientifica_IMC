@@ -1,5 +1,4 @@
-// HUD de KPIs no topo do canvas. Os indicadores representam sempre a rede principal do IMC (os
-// pesquisadores sem colaboração não entram; o resumo do painel direito avisa isso).
+// HUD: indicadores sempre da rede principal
 import { $, fmt, fmt1, pct } from '../core/dom';
 import { DIMN, MAIN_EDGES, MAIN_NODES, dimCol } from '../core/model';
 import { on } from '../core/state';

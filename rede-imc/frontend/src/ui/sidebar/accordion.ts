@@ -1,5 +1,4 @@
-// Seções retráteis da sidebar. O estado inicial vem do HTML (data-open) e a escolha do usuário
-// é lembrada neste navegador.
+// seções retráteis, o estado fica salvo no navegador
 import { lsGet, lsSet } from '../../core/dom';
 
 export function initAccordions(): void {

@@ -1,5 +1,4 @@
-// Painel de um pesquisador: identificação, barras das 5 dimensões, Top 5 parceiros e conexões.
-// Vale para os dois universos; quem não colabora com o IMC aparece sem barras nem parceiros.
+// painel do pesquisador
 import { esc, fmt } from '../../core/dom';
 import { DIMN, DIM_LONG, E, GC, IX, N, col, dimCol } from '../../core/model';
 import { filters } from '../../core/state';
@@ -9,13 +8,11 @@ import { api } from '../../api/api';
 import type { NodeDetailDTO } from '../../api/api';
 import { bars, dot, personRow } from './parts';
 
-// Detalhe vindo de GET /nodes/{id}: define a ordem da lista completa de conexões.
+// vem de GET /nodes/{id}
 const detail = new Map<string, NodeDetailDTO>();
 const loading = new Set<string>();
-/** "Todas as conexões" aberta ou fechada (vale também para o painel do modo peso). */
 export let allOpen = false;
 
-/** Identificação do pesquisador: nome, instituto, área, parceiros, Lattes e avisos (os dois modos usam). */
 export function cabecalho(i: number, v: View): string {
   const n = N[i]!;
   const out = !v.nOn[i] ? '<p class="mu">Fora do recorte atual — ajuste os filtros para vê-lo no grafo.</p>' : '';
@@ -31,7 +28,7 @@ export function nodeView(i: number, rerender: () => void): string {
     .sort((p, q) => q.w - p.w || N[p.o]!.name.localeCompare(N[q.o]!.name));
   const dims = nodeDims(i, v), tot = dims.reduce((s, x) => s + x, 0);
 
-  // Lista completa: ordem da API quando disponível, senão local; contagens sempre do recorte.
+  // usa a ordem da API se tiver
   const d = detail.get(n.id);
   let order = partners;
   if (d) {

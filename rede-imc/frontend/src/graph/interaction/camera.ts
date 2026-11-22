@@ -1,14 +1,12 @@
-// Câmera: transformação mundo → tela, zoom, enquadramento e centralização animados
-// (interpolação do centro e de log(k)).
+// câmera: zoom, pan e enquadramento
 import { N } from '../../core/model';
 import { camera, emit } from '../../core/state';
 import { getView } from '../../core/selectors';
 
 const K_MAX = 20;
-/** Até onde dá para afastar: a rede inteira (com o anel) ocupando esta fração da tela. */
+/** fração da tela que a rede ocupa no zoom mínimo */
 const AFASTAR_ATE = 0.5;
 
-/** Zoom mínimo, calculado a partir do tamanho da rede e da tela (e não um valor fixo). */
 function kMin(): number {
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   for (const p of N) { x0 = Math.min(x0, p.ax); x1 = Math.max(x1, p.ax); y0 = Math.min(y0, p.ay); y1 = Math.max(y1, p.ay); }
@@ -22,7 +20,6 @@ export const sx = (x: number): number => x * camera.k + camera.tx;
 export const sy = (y: number): number => y * camera.k + camera.ty;
 
 let raf = 0;
-/** Anima até o zoom k com o ponto do mundo (cx, cy) no centro da tela. */
 function animateTo(k: number, cx: number, cy: number, ms = 320): void {
   cancelAnimationFrame(raf);
   k = clampK(k);
@@ -42,12 +39,11 @@ function animateTo(k: number, cx: number, cy: number, ms = 320): void {
 
 export function stopCamera(): void { cancelAnimationFrame(raf); }
 
-/** Zoom a partir do centro da tela. */
 export function zoomBy(f: number): void {
   animateTo(camera.k * f, (camera.W / 2 - camera.tx) / camera.k, (camera.H / 2 - camera.ty) / camera.k, 220);
 }
 
-/** Zoom imediato mantendo fixo o ponto da tela (mx, my) — roda do mouse. */
+/** roda do mouse */
 export function zoomAt(mx: number, my: number, f: number): void {
   const nk = clampK(camera.k * f);
   camera.tx = mx - ((mx - camera.tx) * nk) / camera.k;
@@ -56,7 +52,6 @@ export function zoomAt(mx: number, my: number, f: number): void {
   emit('view');
 }
 
-/** Enquadra os nós visíveis (ou as posições de repouso, durante uma transição de layout). */
 export function fitView(ms = 380, useAnchors = false): void {
   const v = getView();
   let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, n = 0;
@@ -66,7 +61,7 @@ export function fitView(ms = 380, useAnchors = false): void {
     x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); n++;
   });
   if (!n) return;
-  // Margem para o HUD (topo) e para os controles (canto inferior direito).
+  // margem pro HUD e pros controles
   const padX = 70, padTop = 86, padBot = 40;
   const w = Math.max(x1 - x0, 1), h = Math.max(y1 - y0, 1);
   let k = Math.min((camera.W - 2 * padX) / w, (camera.H - padTop - padBot) / h);
@@ -76,7 +71,6 @@ export function fitView(ms = 380, useAnchors = false): void {
   animateTo(k, cx, cy, ms);
 }
 
-/** Centraliza um nó mantendo o zoom atual. */
 export function centerOn(i: number): void {
   const n = N[i];
   if (n) animateTo(camera.k, n.x, n.y, 380);

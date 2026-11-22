@@ -1,6 +1,4 @@
-// Seção "Exibição da rede": inclui ou retira os pesquisadores sem colaboração com o IMC.
-// São só vértices, em anel ao redor da rede principal (posições vindas do backend), então ligar e
-// desligar não move a rede principal; a câmera apenas reenquadra o que ficou visível.
+// mostra/esconde os pesquisadores sem colaboração com o IMC
 import { $, fmt } from '../../core/dom';
 import { EXTENDED_NODES, N } from '../../core/model';
 import { emit, extended, selection } from '../../core/state';

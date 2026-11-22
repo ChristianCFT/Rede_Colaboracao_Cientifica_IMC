@@ -1,5 +1,3 @@
-/* Área central: canvas do grafo e superfícies flutuantes sobre ele (controles da câmera e tooltip). */
-
 canvas {
   width: 100%;
   height: 100%;
@@ -8,7 +6,7 @@ canvas {
   touch-action: none;
 }
 
-/* Vidro fosco usado pelo HUD, pelos controles da câmera e pelo tooltip */
+/* vidro fosco */
 .glass {
   background: var(--glass);
   backdrop-filter: blur(8px);
@@ -17,7 +15,7 @@ canvas {
   border-radius: 8px;
 }
 
-/* Controles da câmera (canto inferior direito) */
+/* controles da câmera */
 .cam {
   position: absolute;
   right: 12px;
@@ -63,7 +61,7 @@ canvas {
   stroke-linejoin: round;
 }
 
-/* Tooltip do nó sob o mouse */
+/* tooltip */
 #tip {
   position: absolute;
   pointer-events: none;
@@ -74,7 +72,7 @@ canvas {
   border-radius: 6px;
 }
 
-/* Interruptor "Peso da colaboração" e legenda da espessura (canto inferior esquerdo) */
+/* interruptor do peso e legenda */
 .peso-ctl {
   position: absolute;
   left: 12px;
@@ -108,7 +106,6 @@ canvas {
   stroke-linejoin: round;
 }
 
-/* Trilho do interruptor: o pino vai para a direita e o trilho ganha a cor de destaque quando ligado */
 .peso-ctl .trilho {
   position: relative;
   width: 30px;
@@ -142,7 +139,7 @@ canvas {
   color: var(--ac);
 }
 
-/* Legenda: só aparece com o peso ligado */
+/* legenda (só com peso ligado) */
 .peso-ctl .legenda {
   display: none;
   padding: 2px 8px 6px;

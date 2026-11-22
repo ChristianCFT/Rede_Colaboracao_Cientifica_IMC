@@ -1,7 +1,7 @@
-"""GRAFOS_UNIFEI: lê os currículos Lattes, roda as 6 etapas em ordem e grava os 4 CSVs da rede.
+"""
+Lê os currículos Lattes e gera os 4 CSVs da rede.
 
 Uso: python main.py [--entrada ZIP_OU_PASTA] [--saida PASTA]
-Sem argumentos, usa os caminhos padrão de configuracao.py.
 """
 import argparse
 from pathlib import Path
@@ -11,7 +11,6 @@ from src import csvs, curriculos, deduplicacao, externos, identificacao, profess
 
 
 def main():
-    """Roda o pipeline inteiro, uma etapa por vez."""
     leitor = argparse.ArgumentParser(description='Gera os 4 CSVs da rede de colaboração da UNIFEI.')
     leitor.add_argument('--entrada', default=ENTRADA_PADRAO,
                         help='ZIP com os currículos ou a pasta já extraída')

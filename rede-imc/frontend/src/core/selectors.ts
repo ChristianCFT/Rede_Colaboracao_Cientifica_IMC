@@ -1,9 +1,5 @@
-// Recorte da rede (dados filtrados), memoizado pela versão dos filtros: arestas e nós ativos, pesos
-// por aresta, contadores das facetas e indicadores. Hover, câmera, rótulos e física não invalidam nada.
-//
-// Pesquisadores sem colaboração com o IMC: são só vértices (sem arestas). Aparecem sempre que a opção
-// "Incluir pesquisadores sem colaboração com o IMC" estiver marcada, e não entram em facetas nem
-// indicadores, que contam apenas a rede principal.
+// recorte da rede filtrada, memoizado pela versão dos filtros.
+// os sem colaboração não entram nas facetas nem nos indicadores
 import { CODE_DIM, CODE_YEAR, E, N, NCODES } from './model';
 import { pesoDe } from './peso';
 import { extended, filterVer, filters, fullYearRange, passesArea } from './state';
@@ -12,37 +8,29 @@ export interface Facets {
   types: Record<string, number>;
   groups: Record<string, number>;
   dims: number[];
-  /** Atividades distintas na janela temporal. */
   win: number;
 }
 
-/** Indicadores da rede principal no recorte (não incluem a rede ampliada). */
 export interface MainStats {
   nodes: number;
   edges: number;
   avgDegree: number;
-  /** Atividades distintas por dimensão. */
   dimActivities: number[];
   totalActivities: number;
 }
 
 export interface View {
   ver: number;
-  /** Atividade passa na janela temporal (independe das dimensões). */
   inWin: Uint8Array;
-  /** Atividade passa na janela temporal E na sua dimensão estar ativa. */
   ok: Uint8Array;
-  /** Atividades em comum por aresta no recorte (espessura, ordenação e "mín. de atividades"). */
   fsum: Int32Array;
-  /** Peso normalizado de cada aresta no recorte: só as atividades visíveis, referências fixas da rede. */
+  /** só atividades visíveis, referências fixas */
   fw: Float64Array;
   eOn: Uint8Array;
   nOn: Uint8Array;
-  /** Nº de parceiros visíveis por nó. */
   deg: Int32Array;
-  /** Atividades distintas visíveis por nó. */
   vol: Int32Array;
-  /** Contadores das facetas (cada faceta ignora o próprio filtro, como numa busca facetada). */
+  /** cada faceta ignora o próprio filtro */
   facets: Facets;
   stats: MainStats;
 }
@@ -130,7 +118,7 @@ function filterNodes(eOn: Uint8Array): Uint8Array {
 function nodeTotals(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array): { deg: Int32Array; vol: Int32Array } {
   const deg = new Int32Array(N.length);
   for (let j = 0; j < E.length; j++) if (eOn[j]) { deg[E[j]!.a]!++; deg[E[j]!.b]!++; }
-  // Atividades distintas por nó (marcação com "carimbo" para evitar Sets).
+  // marca com carimbo pra não usar Set
   const vol = new Int32Array(N.length);
   const stamp = new Int32Array(NCODES).fill(-1);
   for (let i = 0; i < N.length; i++) {
@@ -160,7 +148,6 @@ function mainStats(eOn: Uint8Array, nOn: Uint8Array, ok: Uint8Array): MainStats 
 }
 
 let memo: View | null = null;
-/** Recorte atual (recalculado só quando os filtros ou a rede ampliada mudam). */
 export function getView(): View {
   const ver = filterVer();
   if (memo && memo.ver === ver) return memo;
@@ -171,7 +158,6 @@ export function getView(): View {
   return memo;
 }
 
-/** Atividades distintas de um nó, por dimensão, dentro do recorte. */
 export function nodeDims(i: number, v: View = getView()): number[] {
   const out = [0, 0, 0, 0, 0];
   const seen = new Set<number>();
