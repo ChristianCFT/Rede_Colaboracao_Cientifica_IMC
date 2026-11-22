@@ -1,0 +1,59 @@
+/* HUD: indicadores no topo do canvas. */
+
+.hud {
+  position: absolute;
+  top: 12px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: max-content;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 6px;
+  max-width: calc(100% - 24px);
+  padding: 7px 0;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 14px;
+}
+
+.kpi + .kpi {
+  border-left: 1px solid var(--glass-bd);
+}
+
+/* Rótulo do indicador */
+.kl {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--mu);
+}
+
+/* Valor do indicador */
+.kv {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.kv b {
+  font-weight: 600;
+}
+
+.kv .of {
+  color: var(--mu);
+}
+
+.kv .sw {
+  width: 8px;
+  height: 8px;
+}

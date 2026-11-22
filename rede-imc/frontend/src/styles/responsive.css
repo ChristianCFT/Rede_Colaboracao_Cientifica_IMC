@@ -1,0 +1,15 @@
+/* Telas estreitas: painéis laterais e HUD mais compactos. Fica por último para sobrescrever as larguras. */
+
+@media (max-width: 900px) {
+  aside {
+    width: 230px;
+  }
+
+  #side {
+    width: 260px;
+  }
+
+  .kpi {
+    padding: 0 9px;
+  }
+}

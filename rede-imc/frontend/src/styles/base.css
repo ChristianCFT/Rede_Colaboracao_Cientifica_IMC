@@ -1,0 +1,123 @@
+/* Base: variáveis do tema, reset, tipografia e utilitários globais.
+   Tema claro por padrão e escuro via prefers-color-scheme.
+   --cv = fundo do canvas, --pn = barras laterais, --pn2 = superfícies elevadas (inputs, trilhas, hover),
+   --d0..--d4 = cores das 5 dimensões de colaboração. */
+
+:root {
+  --bg: #fafafa;
+  --cv: #fafafa;
+  --pn: #fff;
+  --pn2: #f2f4f7;
+  --tx: #1d2330;
+  --lab: #1d2330;
+  --mu: #667085;
+  --bd: #dde1e8;
+  --ac: #0075ff;
+  --ac-h: #005cc8;
+  --lk: #0b63ce;
+  --glass: rgba(255, 255, 255, .85);
+  --glass-bd: rgba(0, 0, 0, .08);
+  --hov: rgba(0, 0, 0, .05);
+  --d0: #2a78d6;
+  --d1: #eb6834;
+  --d2: #1baf7a;
+  --d3: #eda100;
+  --d4: #e87ba4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121212;
+    --cv: #121212;
+    --pn: #1e1e1e;
+    --pn2: #22252a;
+    --tx: #e6e8ee;
+    --lab: #f5f6f8;
+    --mu: #9aa3b2;
+    --bd: #2a2f3a;
+    --lk: #6aa8ff;
+    --glass: rgba(30, 30, 30, .85);
+    --glass-bd: rgba(255, 255, 255, .08);
+    --hov: rgba(255, 255, 255, .06);
+    --d0: #3987e5;
+    --d1: #d95926;
+    --d2: #199e70;
+    --d3: #c98500;
+    --d4: #d55181;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--tx);
+}
+
+h1 {
+  font-size: 15px;
+  margin: 0 0 2px;
+}
+
+h2 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--mu);
+  margin: 16px 0 6px;
+}
+
+a {
+  color: var(--lk);
+}
+
+/* Utilitários */
+.mu {
+  color: var(--mu);
+}
+
+.sm {
+  font-size: 12px;
+}
+
+.num,
+.cnt {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bolinha de cor (instituto, área ou dimensão) */
+.sw {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* Contador alinhado à direita de uma linha */
+.cnt {
+  margin-left: auto;
+  color: var(--mu);
+}
+
+/* Linhas clicáveis: resultados da busca e listas do painel de detalhes */
+.res div,
+.li div {
+  padding: 4px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.res div:hover,
+.res div.on,
+.li div:hover {
+  background: var(--hov);
+}
