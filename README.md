@@ -90,6 +90,10 @@ python menu_imc.py
 
 No menu, a opção 1 monta a base de 2016 a 2026 e a opção 5 roda todas as análises em sequência.
 
+## Ilustrativo interface com o recorte da computação
+![interface_completa](images/image-2.png)
+![recorte-computação](images/image-1.png)
+
 ## Equipe
 
 | Integrante | Papel |
