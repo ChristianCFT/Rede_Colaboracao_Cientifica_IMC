@@ -169,7 +169,7 @@ Prefixo `/api/v1`. Somente leitura.
 ## Estrutura do projeto
 
 ```
-rede-imc/
+rede-imc-unifei/
 ├── backend/
 │   ├── requirements.txt          dependências da API e da mineração
 │   ├── data/raw/                 os 4 CSVs gerados pela mineração (entrada da API)

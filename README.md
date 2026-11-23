@@ -15,8 +15,10 @@ limita à coautoria: cada ligação reúne artigos, projetos, orientações, ban
   α: artigos 0,40, projetos 0,20, orientações 0,20, produção técnica 0,15 e bancas 0,05.
 - **Camadas de análise:** (1) Computação do IMC, (2) todo o IMC, (3) IMC e outros institutos da UNIFEI, (4) rede completa, com os externos.
 
-Algoritmos usados: BFS, Tarjan (pontos de articulação e pontes), Kruskal (árvore geradora máxima),
-Dijkstra/Brandes (intermediação) e Louvain (comunidades).
+Algoritmos usados: BFS e DFS (componentes e classificação de arestas), Tarjan (pontos de articulação e
+pontes), Dijkstra e intermediação (betweenness), coloração gulosa e teste de bipartição, e Louvain
+(comunidades). As implementações próprias ficam em `Algoritmo_Final_2016/grafos_smac03.py` e são conferidas
+contra o NetworkX.
 
 ## Principais resultados
 
@@ -26,26 +28,34 @@ Dijkstra/Brandes (intermediação) e Louvain (comunidades).
 
 ## Organização
 
-| Pasta | Branch | Conteúdo |
-|---|---|---|
-| [`dados_saida/`](https://github.com/ChristianCFT/Rede_Colaboracao_Cientifica_IMC/tree/main/dados_saida) | `main` | Os 4 CSVs gerados pela mineração e a documentação das colunas |
-| [`rede-imc/`](https://github.com/ChristianCFT/Rede_Colaboracao_Cientifica_IMC/tree/feature/interface/rede-imc) | `feature/interface` | Mineração dos currículos, API (FastAPI) e interface web (TypeScript) |
-| [`recorte_2016/`](https://github.com/ChristianCFT/Rede_Colaboracao_Cientifica_IMC/tree/feature/interface/recorte_2016) | `feature/interface` | Recorte dos CSVs para as atividades de 2016 a 2026 |
-| [`Algoritmo_Final_2016/`](https://github.com/ChristianCFT/Rede_Colaboracao_Cientifica_IMC/tree/feature/algoritmo/Algoritmo_Final_2016) | `feature/algoritmo` | Análises: grupos (Q1), elos e simulação de remoção (Q2) e as quatro camadas |
-| [`rede-imc/analise/`](https://github.com/ChristianCFT/Rede_Colaboracao_Cientifica_IMC/tree/feature/analise-grafos/rede-imc/analise) | `feature/analise-grafos` | Análise complementar da rede do IMC |
-| [`docs/`](docs/) | `main` | Relatório (PDF e fonte em LaTeX) e slides da apresentação |
+| Pasta | Conteúdo |
+|---|---|
+| [`rede-imc-unifei/`](rede-imc-unifei/) | Mineração dos currículos, API (FastAPI) e interface web (TypeScript) |
+| [`recorte_2016/`](recorte_2016/) | Recorte dos 4 CSVs para as atividades de 2016 a 2026 |
+| [`Algoritmo_Final_2016/`](Algoritmo_Final_2016/) | Análises: grupos (Q1), elos e simulação de remoção (Q2) e as quatro camadas |
 
-Cada pasta tem um README com os detalhes.
+Os dados passam pelas pastas nesta ordem:
+
+```
+rede-imc-unifei/backend/mineracao   →  backend/data/raw/          (4 CSVs, todos os anos)
+recorte_2016/main.py                →  recorte_2016/resultados/   (mesmos CSVs, só 2016–2026)
+Algoritmo_Final_2016/montar_base.py →  dataset_IMC_2016_2026.xlsx (base das análises)
+```
+
+A interface usa os CSVs completos e faz o recorte de anos pelo filtro de janela temporal. As análises usam
+os CSVs já recortados, copiados de `recorte_2016/resultados/` para `Algoritmo_Final_2016/`.
+
+`rede-imc-unifei/` e `Algoritmo_Final_2016/` têm READMEs com os detalhes.
 
 ## Como executar
 
 Requisitos: Python 3.11 ou mais recente e Node.js 18 ou mais recente.
 
-**Interface** (branch `feature/interface`)
+**Interface**
 
 ```bash
-cd rede-imc/backend
-python -m venv .venv
+cd rede-imc-unifei/backend
+python3 -m venv .venv
 source .venv/bin/activate          # Windows (PowerShell): .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python -m uvicorn src.main:app --port 8000
@@ -54,7 +64,7 @@ python -m uvicorn src.main:app --port 8000
 Em outro terminal:
 
 ```bash
-cd rede-imc/frontend
+cd rede-imc-unifei/frontend
 npm install
 npm run dev
 ```
@@ -62,11 +72,19 @@ npm run dev
 Depois, abra <http://localhost:5173>. A mineração (`python mineracao/main.py`, dentro de `backend/`) só
 precisa rodar de novo se os currículos mudarem.
 
-**Análises** (branch `feature/algoritmo`)
+**Recorte 2016–2026** (só quando a mineração mudar)
+
+```bash
+cp rede-imc-unifei/backend/data/raw/*.csv recorte_2016/dados/
+python recorte_2016/main.py
+cp recorte_2016/resultados/*.csv Algoritmo_Final_2016/
+```
+
+**Análises**
 
 ```bash
 cd Algoritmo_Final_2016
-pip install pandas numpy networkx scikit-learn openpyxl
+pip install -r requirements.txt
 python menu_imc.py
 ```
 
