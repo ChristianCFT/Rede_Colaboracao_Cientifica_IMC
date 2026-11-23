@@ -33,6 +33,7 @@ contra o NetworkX.
 | [`rede-imc-unifei/`](rede-imc-unifei/) | Mineração dos currículos, API (FastAPI) e interface web (TypeScript) |
 | [`recorte_2016/`](recorte_2016/) | Recorte dos 4 CSVs para as atividades de 2016 a 2026 |
 | [`Algoritmo_Final_2016/`](Algoritmo_Final_2016/) | Análises: grupos (Q1), elos e simulação de remoção (Q2) e as quatro camadas |
+| [`docs/`](docs/) | Relatório (PDF e fonte em LaTeX) e slides da apresentação |
 
 Os dados passam pelas pastas nesta ordem:
 
