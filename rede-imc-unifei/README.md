@@ -87,7 +87,7 @@ Use dois terminais: um para o backend e outro para o frontend.
 
 ```bash
 cd backend
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate        # Windows (PowerShell): .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
